@@ -1,6 +1,7 @@
 package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.LoginRequest;
+import com.uade.ritmofitapi.dto.VerifyOtpRequest;
 import com.uade.ritmofitapi.model.OTP;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.repository.OtpRepository;
@@ -8,12 +9,14 @@ import com.uade.ritmofitapi.repository.UserRepository;
 import com.uade.ritmofitapi.service.AuthService;
 import com.uade.ritmofitapi.service.JwtService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -33,35 +36,16 @@ public class AuthController {
     // Generate OTP for login
     @PostMapping("/login")
     public ResponseEntity<String> loginOrRegister(@Valid @RequestBody LoginRequest request) {
-        authService.initiateLoginOrRegistration(request.getEmail());
+        log.info("Iniciando autenticacion de usuario");
+        authService.initiateLoginOrRegister(request.getEmail());
         return ResponseEntity.ok("OTP enviado al correo " + request.getEmail());
     }
 
     // Verify OTP and get access token
     @PostMapping("/verify")
-    public Map<String, String> verifyOtpAndGenerateToken(String email, String otp) {
-        OTP storedOtp = otpRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("OTP inválido o expirado."));
-
-        // Validate stored OTP code with given code
-        if (!otp.equals(storedOtp.getCode())) {
-            throw new RuntimeException("El OTP es invalido.");
-        }
-
-        // If OTP is correct, it is deleted from the db
-        otpRepository.delete(storedOtp);
-
-        // Find User by email and create if not exists
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = new User(email);
-                    return userRepository.save(newUser);
-                });
-
-        user.setLastLogin(java.time.LocalDateTime.now());
-        userRepository.save(user);
-
-        String accessToken = jwtService.generateToken(user.getId());
+    public Map<String, String> verifyOtpAndGenerateToken(@Valid @RequestBody VerifyOtpRequest request) {
+        log.info("Iniciando validacion de OTP para {}", request.getEmail());
+        String accessToken = authService.validateLoginWithOtp(request.getEmail(), request.getOtp());
         return Map.of("token", accessToken);
     }
 

@@ -19,9 +19,10 @@ public class EmailService {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
-            message.setFrom("ritmofit@mailsender.com");
+            message.setFrom("no-reply@ritmofit.com.ar");
 
             mailSender.send(message);
+            log.info("Email OTP enviado exitosamente a {}", to);
         } catch (Exception e) {
             log.error("Error al enviar el email: {}", e.getMessage());
             e.printStackTrace();
