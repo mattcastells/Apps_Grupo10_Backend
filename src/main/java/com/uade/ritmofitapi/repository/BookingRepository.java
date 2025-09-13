@@ -1,6 +1,6 @@
 package com.uade.ritmofitapi.repository;
 
-import com.uade.ritmofitapi.model.Booking;
+import com.uade.ritmofitapi.model.booking.Booking;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
