@@ -1,20 +1,19 @@
 package com.uade.ritmofitapi.dto;
 
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class GymClassDto {
+@AllArgsConstructor
+public class ScheduledClassDto {
     private String id;
     private String name;
-    private String discipline;
-    private Integer duration;
-    private Integer capacity;
     private String professor;
     private LocalDateTime dateTime;
+    private Integer durationMinutes;
+    private Integer availableSlots;
 }

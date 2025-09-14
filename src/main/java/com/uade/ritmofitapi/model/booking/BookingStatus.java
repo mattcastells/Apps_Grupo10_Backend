@@ -1,4 +1,4 @@
-package com.uade.ritmofitapi.model;
+package com.uade.ritmofitapi.model.booking;
 
 public enum BookingStatus {
     CONFIRMED,
