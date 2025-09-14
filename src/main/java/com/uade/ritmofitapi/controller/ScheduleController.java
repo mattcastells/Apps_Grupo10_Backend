@@ -1,6 +1,6 @@
 package com.uade.ritmofitapi.controller;
 
-import com.uade.ritmofitapi.dto.ScheduledClassDto;
+import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
 import com.uade.ritmofitapi.service.ScheduleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

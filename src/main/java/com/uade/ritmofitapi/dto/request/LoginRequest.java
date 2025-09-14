@@ -1,4 +1,4 @@
-package com.uade.ritmofitapi.dto;
+package com.uade.ritmofitapi.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,11 +7,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class VerifyOtpRequest {
+public class LoginRequest {
     @NotBlank(message = "El email no puede estar vacío")
     @Email(message = "Debe ser una dirección de email válida")
     String email;
-
-    @NotBlank(message = "El OTP no puede estar vacío")
-    String otp;
 }

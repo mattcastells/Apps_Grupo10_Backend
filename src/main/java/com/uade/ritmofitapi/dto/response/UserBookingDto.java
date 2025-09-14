@@ -1,4 +1,4 @@
-package com.uade.ritmofitapi.dto;
+package com.uade.ritmofitapi.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

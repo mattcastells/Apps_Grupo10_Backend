@@ -1,4 +1,3 @@
-// GymClassRepository.java
 package com.uade.ritmofitapi.repository;
 
 import com.uade.ritmofitapi.model.ScheduledClass;
