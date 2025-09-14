@@ -1,8 +1,8 @@
 package com.uade.ritmofitapi.controller;
 
-import com.uade.ritmofitapi.dto.BookingRequest;
-import com.uade.ritmofitapi.dto.BookingResponse;
-import com.uade.ritmofitapi.dto.UserBookingDto;
+import com.uade.ritmofitapi.dto.request.BookingRequest;
+import com.uade.ritmofitapi.dto.response.BookingResponse;
+import com.uade.ritmofitapi.dto.response.UserBookingDto;
 import com.uade.ritmofitapi.service.BookingService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

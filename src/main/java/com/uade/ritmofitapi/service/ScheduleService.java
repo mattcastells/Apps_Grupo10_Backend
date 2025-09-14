@@ -1,6 +1,6 @@
 package com.uade.ritmofitapi.service;
 
-import com.uade.ritmofitapi.dto.ScheduledClassDto;
+import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import org.springframework.stereotype.Service;

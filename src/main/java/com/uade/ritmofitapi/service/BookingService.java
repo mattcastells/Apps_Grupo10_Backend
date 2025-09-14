@@ -1,9 +1,9 @@
 package com.uade.ritmofitapi.service;
 
-import com.uade.ritmofitapi.dto.BookingResponse;
-import com.uade.ritmofitapi.dto.BookingRequest;
+import com.uade.ritmofitapi.dto.response.BookingResponse;
+import com.uade.ritmofitapi.dto.request.BookingRequest;
 
-import com.uade.ritmofitapi.dto.UserBookingDto;
+import com.uade.ritmofitapi.dto.response.UserBookingDto;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.UserBooking;

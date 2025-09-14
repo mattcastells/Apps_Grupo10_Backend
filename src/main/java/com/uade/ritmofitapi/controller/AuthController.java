@@ -1,7 +1,7 @@
 package com.uade.ritmofitapi.controller;
 
-import com.uade.ritmofitapi.dto.LoginRequest;
-import com.uade.ritmofitapi.dto.VerifyOtpRequest;
+import com.uade.ritmofitapi.dto.request.LoginRequest;
+import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
 import com.uade.ritmofitapi.repository.OtpRepository;
 import com.uade.ritmofitapi.repository.UserRepository;
 import com.uade.ritmofitapi.service.AuthService;

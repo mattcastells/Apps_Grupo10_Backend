@@ -49,32 +49,50 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.deleteAll();
 
         // --- Crear Usuarios ---
-        User user1 = new User("mattcastells@uade.edu.ar");
+        User user1 = new User("matias@uade.edu.ar");
         user1.setId("6502251846b9a22a364b9011"); // Fijamos un ID para pruebas
-        User user2 = new User("otro.usuario@uade.edu.ar");
+        User user2 = new User("franco@uade.edu.ar");
         userRepository.saveAll(List.of(user1, user2));
         log.info("-> Usuarios mock creados.");
 
         // --- Crear Plantillas de Clases ---
-        ClassTemplate yogaTemplate = new ClassTemplate();
-        yogaTemplate.setName("Yoga Matutino");
-        yogaTemplate.setDiscipline("Yoga");
-        yogaTemplate.setProfessor("Ana López");
-        yogaTemplate.setDurationMinutes(60);
-        yogaTemplate.setCapacity(20);
-        yogaTemplate.setDayOfWeek(DayOfWeek.MONDAY);
-        yogaTemplate.setTime(LocalTime.of(9, 0));
+        ClassTemplate yoga = new ClassTemplate();
+        yoga.setName("Yoga Matutino");
+        yoga.setDiscipline("Yoga");
+        yoga.setProfessor("Ana López");
+        yoga.setDurationMinutes(60);
+        yoga.setCapacity(20);
+        yoga.setDayOfWeek(DayOfWeek.MONDAY);
+        yoga.setTime(LocalTime.of(9, 0));
 
-        ClassTemplate funcionalTemplate = new ClassTemplate();
-        funcionalTemplate.setName("Funcional Intenso");
-        funcionalTemplate.setDiscipline("Funcional");
-        funcionalTemplate.setProfessor("Carlos Ruiz");
-        funcionalTemplate.setDurationMinutes(45);
-        funcionalTemplate.setCapacity(15);
-        funcionalTemplate.setDayOfWeek(DayOfWeek.WEDNESDAY);
-        funcionalTemplate.setTime(LocalTime.of(18, 30));
+        ClassTemplate funcional = new ClassTemplate();
+        funcional.setName("Funcional Intenso");
+        funcional.setDiscipline("Funcional");
+        funcional.setProfessor("Carlos Ruiz");
+        funcional.setDurationMinutes(45);
+        funcional.setCapacity(15);
+        funcional.setDayOfWeek(DayOfWeek.WEDNESDAY);
+        funcional.setTime(LocalTime.of(18, 30));
 
-        classTemplateRepository.saveAll(List.of(yogaTemplate, funcionalTemplate));
+        ClassTemplate spinning = new ClassTemplate();
+        yoga.setName("Spinning de Alta Intensidad");
+        yoga.setDiscipline("Spinning");
+        yoga.setProfessor("Jorge Franco");
+        yoga.setDurationMinutes(45);
+        yoga.setCapacity(15);
+        yoga.setDayOfWeek(DayOfWeek.TUESDAY);
+        yoga.setTime(LocalTime.of(10, 0));
+
+        ClassTemplate boxeo = new ClassTemplate();
+        boxeo.setName("Boxeo Recreativo");
+        boxeo.setDiscipline("Boxeo");
+        boxeo.setProfessor("Pablo Pujol");
+        boxeo.setDurationMinutes(75);
+        boxeo.setCapacity(12);
+        boxeo.setDayOfWeek(DayOfWeek.FRIDAY);
+        boxeo.setTime(LocalTime.of(20, 0));
+
+        classTemplateRepository.saveAll(List.of(yoga, funcional, spinning, boxeo));
         log.info("-> Plantillas de clases creadas.");
 
         // --- Generar Clases Agendadas para las próximas 2 semanas ---
