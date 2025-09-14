@@ -1,14 +1,13 @@
 package com.uade.ritmofitapi.controller;
 
-import com.sun.security.auth.UserPrincipal;
 import com.uade.ritmofitapi.dto.BookingRequest;
 import com.uade.ritmofitapi.dto.BookingResponse;
+import com.uade.ritmofitapi.dto.UserBookingDto;
 import com.uade.ritmofitapi.service.BookingService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,29 +24,26 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(
-            @RequestBody BookingRequest bookingRequest,
-            @AuthenticationPrincipal UserPrincipal currentUser
-    ) {
-        BookingResponse newBooking = bookingService.create(bookingRequest, currentUser.getName());
+    public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingRequest bookingRequest) {
+        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+        BookingResponse newBooking = bookingService.create(bookingRequest, userId);
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
 
-    @GetMapping("/upcoming")
-    public ResponseEntity<List<BookingResponse>> getUpcomingBookings(
-            @AuthenticationPrincipal UserPrincipal currentUser
-    ) {
-        List<BookingResponse> upcomingBookings = bookingService.findUpcomingByUser(currentUser.getId());
-        return ResponseEntity.ok(upcomingBookings);
+    @GetMapping("/my-bookings")
+    public ResponseEntity<List<UserBookingDto>> getUserBookings() {
+        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+
+        List<UserBookingDto> bookings = bookingService.getAllByUserId(userId);
+        return ResponseEntity.ok(bookings);
     }
 
     @DeleteMapping("/{bookingId}")
-    public ResponseEntity<Void> cancelBooking(
-            @PathVariable String bookingId,
-            @AuthenticationPrincipal UserPrincipal currentUser
-    ) {
-        bookingService.cancel(bookingId, currentUser.getName());
-        return ResponseEntity.noContent().build(); // HTTP 204 No Content es ideal para un DELETE exitoso
+    public ResponseEntity<Void> cancelBooking(@PathVariable String bookingId) {
+        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+
+        bookingService.cancel(bookingId, userId);
+        return ResponseEntity.noContent().build();
     }
 
 }

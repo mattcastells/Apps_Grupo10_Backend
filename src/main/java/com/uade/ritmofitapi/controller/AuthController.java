@@ -2,8 +2,6 @@ package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.LoginRequest;
 import com.uade.ritmofitapi.dto.VerifyOtpRequest;
-import com.uade.ritmofitapi.model.OTP;
-import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.repository.OtpRepository;
 import com.uade.ritmofitapi.repository.UserRepository;
 import com.uade.ritmofitapi.service.AuthService;
@@ -14,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @RestController

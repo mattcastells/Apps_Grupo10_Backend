@@ -3,116 +3,121 @@ package com.uade.ritmofitapi.service;
 import com.uade.ritmofitapi.dto.BookingResponse;
 import com.uade.ritmofitapi.dto.BookingRequest;
 
-import java.util.List;
-
-import com.uade.ritmofitapi.model.GymClass;
-import com.uade.ritmofitapi.model.booking.Booking;
+import com.uade.ritmofitapi.dto.UserBookingDto;
+import com.uade.ritmofitapi.model.ScheduledClass;
+import com.uade.ritmofitapi.model.User;
+import com.uade.ritmofitapi.model.booking.UserBooking;
 import com.uade.ritmofitapi.model.booking.BookingStatus;
 import com.uade.ritmofitapi.repository.BookingRepository;
-import com.uade.ritmofitapi.repository.GymClassRepository;
+import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import com.uade.ritmofitapi.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    private final GymClassRepository gymClassRepository;
+    private final ScheduledClassRepository scheduledClassRepository;
     private final UserRepository userRepository;
 
     public BookingService(BookingRepository bookingRepository,
-                              GymClassRepository gymClassRepository,
-                              UserRepository userRepository) {
+                          ScheduledClassRepository scheduledClassRepository,
+                          UserRepository userRepository) {
         this.bookingRepository = bookingRepository;
-        this.gymClassRepository = gymClassRepository;
+        this.scheduledClassRepository = scheduledClassRepository;
         this.userRepository = userRepository;
     }
 
     @Transactional
     public BookingResponse create(BookingRequest bookingRequest, String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
 
-        // 1. Validacion de Existencia
-        GymClass gymClass = gymClassRepository.findById(bookingRequest.getClaseId())
-                .orElseThrow(() -> new RuntimeException("Clase no encontrada"));
+        ScheduledClass scheduledClass = scheduledClassRepository.findById(bookingRequest.getScheduledClassId())
+                .orElseThrow(() -> new RuntimeException("Clase agendada no encontrada con ID: " + bookingRequest.getScheduledClassId()));
 
-        userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // 2. Validaciones Funcionales
-        // a) El usuario no puede inscribirse dos veces a la misma clase
-        boolean alreadyBooked = bookingRepository.existsByClaseIdAndUsuarioIdAndFechaHoraClase(
-                gymClass.getId(), userId, bookingRequest.getFechaHoraClase()
-        );
-        if (alreadyBooked) {
-            throw new RuntimeException("Ya tienes una reserva para esta gymClass.");
-        }
-        // a) Validar cupo máximo
-        long currentBookings = bookingRepository.countByClaseIdAndFechaHoraClaseAndEstado(
-                gymClass.getId(), bookingRequest.getFechaHoraClase(), Booking.EstadoBooking.CONFIRMADA
-        );
-        if (currentBookings >= gymClass.getCupoMaximo()) {
+        if (scheduledClass.getEnrolledCount() >= scheduledClass.getCapacity()) {
             throw new RuntimeException("No hay cupos disponibles para esta clase.");
         }
 
-
-        // 3. Creación de la Reserva
-        Booking newBooking = new Booking();
-        newBooking.setUserId(userId);
-        newBooking.setClassId(classId);
-        newBooking.setFechaHoraClase(bookingRequest.getFechaHoraClase());
-        newBooking.setBookingStatus(BookingStatus.CONFIRMED);
-        newBooking.setCreationDate(LocalDateTime.now());
-        Booking savedBooking = bookingRepository.save(newBooking);
-
-        return mapToBookingResponse(savedBooking, gymClass);
-    }
-
-
-    @Transactional
-    public void cancel(String bookingId, String userId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
-
-        // ¡Validación de seguridad crítica!
-        // Un usuario solo puede cancelar sus propias reservas.
-        if (!booking.getUsuarioId().equals(userId)) {
-            throw new SecurityException("No tienes permiso para cancelar esta reserva.");
+        if (bookingRepository.existsByUserIdAndScheduledClassId(userId, scheduledClass.getId())) {
+            throw new RuntimeException("El usuario ya tiene una reserva para esta clase.");
         }
 
-        booking.setEstado(Booking.EstadoBooking.CANCELADA);
-        bookingRepository.save(booking);
+        scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() + 1);
+        scheduledClassRepository.save(scheduledClass);
+
+        UserBooking newBooking = new UserBooking();
+        newBooking.setUserId(userId);
+        newBooking.setScheduledClassId(scheduledClass.getId());
+        newBooking.setCreationDate(LocalDateTime.now());
+        newBooking.setStatus(BookingStatus.CONFIRMED);
+        newBooking.setClassName(scheduledClass.getName());
+        newBooking.setClassDateTime(scheduledClass.getDateTime());
+
+        UserBooking savedBooking = bookingRepository.save(newBooking);
+
+        return mapToBookingResponse(savedBooking);
     }
 
-    @Override
-    public List<BookingResponse> findUpcomingByUser(String userId) {
-        // Lógica para buscar reservas futuras y confirmadas
-        List<Booking> bookings = bookingRepository.findByUsuarioIdAndEstadoAndFechaHoraClaseAfter(
-                userId, Booking.EstadoBooking.CONFIRMADA, LocalDateTime.now()
-        );
+    public List<UserBookingDto> getAllByUserId(String userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+        }
+
+        List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);
 
         return bookings.stream()
-                .map(booking -> {
-                    // Podemos enriquecer la respuesta consultando la clase
-                    Clase clase = gymClassRepository.findById(booking.getClaseId()).orElse(null);
-                    return mapToBookingResponse(booking, clase);
-                })
+                .map(this::mapToUserBookingDto)
                 .collect(Collectors.toList());
     }
 
-    // Método helper para no repetir el código de mapeo
-    private BookingResponse mapToBookingResponse(Booking booking, Clase clase) {
+    @Transactional
+    public void cancel(String bookingId, String userId) {
+        UserBooking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + bookingId));
+
+        // Validaciones
+        if (!booking.getUserId().equals(userId)) {
+            throw new RuntimeException("Acceso denegado. No tienes permiso para cancelar esta reserva.");
+        }
+
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new RuntimeException("Solo se pueden cancelar reservas confirmadas.");
+        }
+
+        // Buscamos la clase agendada
+        ScheduledClass scheduledClass = scheduledClassRepository.findById(booking.getScheduledClassId())
+                .orElseThrow(() -> new RuntimeException("La clase agendada asociada a la reserva no fue encontrada."));
+
+        // Actualizamos el contador y el estado de la reserva
+        scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() - 1);
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        scheduledClassRepository.save(scheduledClass);
+        bookingRepository.save(booking);
+    }
+
+    private UserBookingDto mapToUserBookingDto(UserBooking booking) {
+        return new UserBookingDto(
+                booking.getId(),
+                booking.getClassName(),
+                booking.getClassDateTime(),
+                "Profesor a obtener", // Si queremos mostrar el profesor, habria que traerlo de ScheduledClass
+                booking.getStatus().toString()
+        );
+    }
+
+    private BookingResponse mapToBookingResponse(UserBooking booking) {
         BookingResponse dto = new BookingResponse();
         dto.setId(booking.getId());
-        dto.setFechaHoraClase(booking.getFechaHoraClase());
-        dto.setEstado(booking.getEstado().toString());
-        if (clase != null) {
-            dto.setClaseNombre(clase.getNombre());
-            // Aquí podríamos buscar el nombre de la sede también si fuera necesario
-            // dto.setSedeNombre(...); 
-        }
+        dto.setClassDateTime(booking.getClassDateTime());
+        dto.setStatus(booking.getStatus().toString());
+        dto.setClassName(booking.getClassName());
         return dto;
     }
 }

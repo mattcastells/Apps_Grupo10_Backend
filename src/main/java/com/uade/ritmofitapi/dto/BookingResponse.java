@@ -1,13 +1,14 @@
 package com.uade.ritmofitapi.dto;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+@Data
 public class BookingResponse {
     private String id;
-    private String claseNombre; // Enriquecemos la respuesta
-    private String sedeNombre;  // para no obligar a la app a hacer más llamadas
-    private LocalDateTime fechaHoraClase;
-    private String estado;
-
-    // Getters y Setters
+    private String className;
+    private String locationName;
+    private LocalDateTime classDateTime;
+    private String status;
 }
