@@ -8,12 +8,16 @@ import com.uade.ritmofitapi.dto.UserDto;
 import com.uade.ritmofitapi.dto.ProfessorDto;
 import com.uade.ritmofitapi.dto.StudentDto;
 import com.uade.ritmofitapi.service.UserMapper;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -35,6 +39,7 @@ public class UserController {
 
     @PostMapping("/student")
     public StudentDto createStudent(@RequestBody Student student) {
+        log.info("hola");
         Student saved = userRepository.save(student);
         return userMapper.toStudentDto(saved);
     }
