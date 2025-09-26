@@ -9,6 +9,7 @@ import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import com.uade.ritmofitapi.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -26,12 +27,16 @@ public class DataSeeder implements CommandLineRunner {
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
     private final BookingRepository bookingRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository, ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository) {
+    public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
+                      ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
+                      PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.classTemplateRepository = classTemplateRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.bookingRepository = bookingRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -49,9 +54,18 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.deleteAll();
 
         // --- Crear Usuarios ---
-        User user1 = new User("matias@uade.edu.ar");
+
+        User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
+        User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 35, "Masculino");
+        User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
+
+        List<User> users = List.of(user1, user2, user3);
+
+        for (User user : users) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            user.setVerified(true);
+        }
         user1.setId("6502251846b9a22a364b9011"); // Fijamos un ID para pruebas
-        User user2 = new User("franco@uade.edu.ar");
         userRepository.saveAll(List.of(user1, user2));
         log.info("-> Usuarios mock creados.");
 

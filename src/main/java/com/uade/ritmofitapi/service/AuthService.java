@@ -1,74 +1,72 @@
 package com.uade.ritmofitapi.service;
 
-import com.uade.ritmofitapi.model.OTP;
 import com.uade.ritmofitapi.model.User;
-import com.uade.ritmofitapi.repository.OtpRepository;
 import com.uade.ritmofitapi.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
 
 @Slf4j
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final OtpRepository otpRepository;
-    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final OtpService otpService; // Refactorizamos la lógica de OTP a su propio servicio
 
     public AuthService(
             UserRepository userRepository,
-            OtpRepository otpRepository,
-            EmailService emailService,
+            OtpService otpService,
+            PasswordEncoder passwordEncoder,
             JwtService jwtService) {
         this.userRepository = userRepository;
-        this.otpRepository = otpRepository;
-        this.emailService = emailService;
+        this.otpService = otpService;
+        this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
-
-    public void initiateLoginOrRegister(String email) {
-        String otp = generateOtp();
-        OTP userOtp = new OTP(email, otp);
-
-        otpRepository.save(userOtp);
-
-        // Asunto y cuerpo del correo
-        String subject = "Tu código de acceso único";
-        String body = "Hola,\n\nUsa este código para iniciar sesión en tu aplicación: " + otp + "\n\nEl código es válido por 10 minutos.";
-
-        emailService.sendEmail(email, subject, body);
-    }
-
-    private String generateOtp() {
-        return String.format("%06d", new SecureRandom().nextInt(1000000));
-    }
-
-    public String validateLoginWithOtp(String email, String otp) {
-        OTP storedOtp = otpRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("OTP inválido o expirado."));
-
-        // Validate stored OTP code with given code
-        if (!otp.equals(storedOtp.getCode())) {
-            throw new RuntimeException("El OTP es invalido.");
+    public User register(String name, String email, String password, Integer age, String gender) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("El email ya está en uso.");
         }
+        // Hasheamos la contraseña antes de guardarla
+        String hashedPassword = passwordEncoder.encode(password);
+        User newUser = new User(name, email, hashedPassword, age, gender);
+        userRepository.save(newUser);
 
-        // If OTP is correct, it is deleted from the db
-        otpRepository.delete(storedOtp);
+        // Enviamos el OTP para la verificación del email
+        otpService.sendOtpForVerification(email);
+        return newUser;
+    }
 
-        // Find User by email and create if not exists
+    public String login(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = new User(email);
-                    return userRepository.save(newUser);
-                });
+                .orElseThrow(() -> new RuntimeException("Usuario o contraseña inválidos."));
+
+        //if (!user.isVerified()) {
+        //    throw new RuntimeException("Por favor, verifica tu email antes de iniciar sesión.");
+        //}
+
+        // Comparamos la contraseña enviada con el hash almacenado
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Usuario o contraseña inválidos.");
+        }
 
         user.setLastLogin(java.time.LocalDateTime.now());
         userRepository.save(user);
 
+        log.info("SUCCESSFUL LOGIN FOR USER: " + user.getEmail());
         return jwtService.generateToken(user.getId());
+    }
+
+
+    public void verifyEmail(String email, String otp) {
+        otpService.validateOtp(email, otp);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+        user.setVerified(true);
+        userRepository.save(user);
     }
 }
