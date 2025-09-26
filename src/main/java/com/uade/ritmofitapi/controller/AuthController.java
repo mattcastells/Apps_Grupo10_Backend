@@ -11,39 +11,39 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.uade.ritmofitapi.dto.request.LoginRequest; // Necesitarás un DTO para el login
+import com.uade.ritmofitapi.dto.request.RegisterRequest; // Y otro para el registro
+import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
+import com.uade.ritmofitapi.service.AuthService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
-    private final OtpRepository otpRepository;
-    private final UserRepository userRepository;
-    private final JwtService jwtService;
 
-    public AuthController(AuthService authService, OtpRepository otpRepository, UserRepository userRepository, JwtService jwtService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.otpRepository = otpRepository;
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
     }
 
-    // Generate OTP for login
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, String>> register(@RequestBody RegisterRequest request) {
+        authService.register(request.getName(), request.getEmail(), request.getPassword(), request.getAge(), request.getGender());
+        return ResponseEntity.ok(Map.of("message", "Usuario registrado. Por favor, verifica tu email con el OTP enviado."));
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<String> loginOrRegister(@Valid @RequestBody LoginRequest request) {
-        log.info("Iniciando autenticacion de usuario");
-        authService.initiateLoginOrRegister(request.getEmail());
-        return ResponseEntity.ok("OTP enviado al correo " + request.getEmail());
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
+        String token = authService.login(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(Map.of("token", token));
     }
 
-    // Verify OTP and get access token
-    @PostMapping("/verify")
-    public Map<String, String> verifyOtpAndGenerateToken(@Valid @RequestBody VerifyOtpRequest request) {
-        log.info("Iniciando validacion de OTP para {}", request.getEmail());
-        String accessToken = authService.validateLoginWithOtp(request.getEmail(), request.getOtp());
-        return Map.of("token", accessToken);
+    @PostMapping("/verify-email")
+    public ResponseEntity<Map<String, String>> verifyEmail(@RequestBody VerifyOtpRequest request) {
+        authService.verifyEmail(request.getEmail(), request.getOtp());
+        return ResponseEntity.ok(Map.of("message", "Email verificado correctamente."));
     }
-
 }
