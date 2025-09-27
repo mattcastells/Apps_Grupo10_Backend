@@ -28,6 +28,8 @@ public class SecurityConfig {
                         // ¡¡IMPORTANTE!! Esto es temporal. Lo aseguraremos cuando implementemos JWT.
                         .requestMatchers("/api/v1/booking/**").permitAll()
 
+                        .requestMatchers("/api/v1/users/**").permitAll()
+
                         // Cualquier otra petición que no coincida con las reglas anteriores, requerirá autenticación.
                         .anyRequest().authenticated()
                 )
