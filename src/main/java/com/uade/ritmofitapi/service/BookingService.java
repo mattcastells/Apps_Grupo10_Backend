@@ -32,7 +32,6 @@ public class BookingService {
         this.userRepository = userRepository;
     }
 
-    @Transactional
     public BookingResponse create(BookingRequest bookingRequest, String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
@@ -71,12 +70,15 @@ public class BookingService {
 
         List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);
 
+        // Filtrar solo reservas futuras y confirmadas
+        LocalDateTime now = LocalDateTime.now();
         return bookings.stream()
+                .filter(booking -> booking.getClassDateTime().isAfter(now))
+                .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
                 .map(this::mapToUserBookingDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
     public void cancel(String bookingId, String userId) {
         UserBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + bookingId));
@@ -103,11 +105,16 @@ public class BookingService {
     }
 
     private UserBookingDto mapToUserBookingDto(UserBooking booking) {
+        // Obtener el profesor desde la clase agendada
+        String professor = scheduledClassRepository.findById(booking.getScheduledClassId())
+                .map(ScheduledClass::getProfessor)
+                .orElse("Profesor no disponible");
+        
         return new UserBookingDto(
                 booking.getId(),
                 booking.getClassName(),
                 booking.getClassDateTime(),
-                "Profesor a obtener", // Si queremos mostrar el profesor, habria que traerlo de ScheduledClass
+                professor,
                 booking.getStatus().toString()
         );
     }

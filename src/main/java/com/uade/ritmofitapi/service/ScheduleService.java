@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +29,16 @@ public class ScheduleService {
         return classes.stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+    }
+
+    public ScheduledClassDto getClassDetail(String classId) {
+        Optional<ScheduledClass> scheduledClass = scheduledClassRepository.findById(classId);
+
+        if (scheduledClass.isEmpty()) {
+            throw new RuntimeException("Clase no encontrada con ID: " + classId);
+        }
+
+        return mapToDto(scheduledClass.get());
     }
 
     private ScheduledClassDto mapToDto(ScheduledClass scheduledClass) {

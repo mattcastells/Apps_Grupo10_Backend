@@ -21,7 +21,7 @@ import java.util.List;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = true;
+    private final Boolean skip = false;
 
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
@@ -58,8 +58,9 @@ public class DataSeeder implements CommandLineRunner {
         User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
         User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 35, "Masculino");
         User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
+        User user4 = new User("Antonio", "antonio@uade.edu.ar", "1234", 24, "Masculino");
 
-        List<User> users = List.of(user1, user2, user3);
+        List<User> users = List.of(user1, user2, user3, user4);
 
         for (User user : users) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -71,6 +72,7 @@ public class DataSeeder implements CommandLineRunner {
 
         // --- Crear Plantillas de Clases ---
         ClassTemplate yoga = new ClassTemplate();
+        yoga.setId("6502251846b9a22a364b9010");
         yoga.setName("Yoga Matutino");
         yoga.setDiscipline("Yoga");
         yoga.setProfessor("Ana López");
@@ -80,6 +82,7 @@ public class DataSeeder implements CommandLineRunner {
         yoga.setTime(LocalTime.of(9, 0));
 
         ClassTemplate funcional = new ClassTemplate();
+        funcional.setId("6502251846b9a22a364b9011");
         funcional.setName("Funcional Intenso");
         funcional.setDiscipline("Funcional");
         funcional.setProfessor("Carlos Ruiz");
@@ -89,6 +92,7 @@ public class DataSeeder implements CommandLineRunner {
         funcional.setTime(LocalTime.of(18, 30));
 
         ClassTemplate spinning = new ClassTemplate();
+        spinning.setId("6502251846b9a22a364b9013");
         yoga.setName("Spinning de Alta Intensidad");
         yoga.setDiscipline("Spinning");
         yoga.setProfessor("Jorge Franco");
@@ -98,6 +102,7 @@ public class DataSeeder implements CommandLineRunner {
         yoga.setTime(LocalTime.of(10, 0));
 
         ClassTemplate boxeo = new ClassTemplate();
+        boxeo.setId("6502251846b9a22a364b9012");
         boxeo.setName("Boxeo Recreativo");
         boxeo.setDiscipline("Boxeo");
         boxeo.setProfessor("Pablo Pujol");
