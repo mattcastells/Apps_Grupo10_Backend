@@ -46,9 +46,9 @@ $env:SMTP_PASSWORD="tu_contraseña_de_smtp"
 
 
 ### Cómo Levantar el Proyecto
-Una vez que las variables de entorno estén configurados, puedes levantar el proyecto utilizando el Maven Wrapper incluido en el repositorio.
+Una vez que las variables de entorno estén configurados, puedes levantar el proyecto utilizando Maven.
 ```
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 Si todo ha salido bien, verás en la consola los logs de Spring Boot indicando que la aplicación se ha iniciado. Por defecto, el servidor se ejecutará en http://localhost:8080.
