@@ -4,6 +4,7 @@ import com.uade.ritmofitapi.dto.response.BookingResponse;
 import com.uade.ritmofitapi.dto.request.BookingRequest;
 
 import com.uade.ritmofitapi.dto.response.UserBookingDto;
+import com.uade.ritmofitapi.exception.AlreadyBookedException;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.UserBooking;
@@ -32,6 +33,7 @@ public class BookingService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public BookingResponse create(BookingRequest bookingRequest, String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
@@ -43,8 +45,9 @@ public class BookingService {
             throw new RuntimeException("No hay cupos disponibles para esta clase.");
         }
 
-        if (bookingRepository.existsByUserIdAndScheduledClassId(userId, scheduledClass.getId())) {
-            throw new RuntimeException("El usuario ya tiene una reserva para esta clase.");
+        // Solo bloquear si ya tiene una reserva CONFIRMADA
+        if (bookingRepository.existsByUserIdAndScheduledClassIdAndStatus(userId, scheduledClass.getId(), BookingStatus.CONFIRMED)) {
+            throw new AlreadyBookedException("La clase ya fue reservada por este usuario.");
         }
 
         scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() + 1);
@@ -79,6 +82,7 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void cancel(String bookingId, String userId) {
         UserBooking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada con ID: " + bookingId));
@@ -96,8 +100,10 @@ public class BookingService {
         ScheduledClass scheduledClass = scheduledClassRepository.findById(booking.getScheduledClassId())
                 .orElseThrow(() -> new RuntimeException("La clase agendada asociada a la reserva no fue encontrada."));
 
-        // Actualizamos el contador y el estado de la reserva
-        scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() - 1);
+        if (scheduledClass.getEnrolledCount() > 0) {
+            scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() - 1);
+        }
+
         booking.setStatus(BookingStatus.CANCELLED);
 
         scheduledClassRepository.save(scheduledClass);
