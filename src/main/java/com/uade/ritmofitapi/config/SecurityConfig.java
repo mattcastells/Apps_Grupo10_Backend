@@ -29,6 +29,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/booking/**").permitAll()
 
                         .requestMatchers("/api/v1/users/**").permitAll()
+                        
+                        .requestMatchers("/api/v1/history/**").permitAll()
 
                         // Cualquier otra petición que no coincida con las reglas anteriores, requerirá autenticación.
                         .anyRequest().authenticated()
