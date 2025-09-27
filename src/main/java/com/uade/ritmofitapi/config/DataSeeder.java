@@ -3,6 +3,8 @@ package com.uade.ritmofitapi.config;
 import com.uade.ritmofitapi.model.ClassTemplate;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
+import com.uade.ritmofitapi.model.booking.BookingStatus;
+import com.uade.ritmofitapi.model.booking.UserBooking;
 import com.uade.ritmofitapi.repository.BookingRepository;
 import com.uade.ritmofitapi.repository.ClassTemplateRepository;
 import com.uade.ritmofitapi.repository.ScheduledClassRepository;
@@ -21,7 +23,7 @@ import java.util.List;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = true;
+    private final Boolean skip = false;
 
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
@@ -89,13 +91,13 @@ public class DataSeeder implements CommandLineRunner {
         funcional.setTime(LocalTime.of(18, 30));
 
         ClassTemplate spinning = new ClassTemplate();
-        yoga.setName("Spinning de Alta Intensidad");
-        yoga.setDiscipline("Spinning");
-        yoga.setProfessor("Jorge Franco");
-        yoga.setDurationMinutes(45);
-        yoga.setCapacity(15);
-        yoga.setDayOfWeek(DayOfWeek.TUESDAY);
-        yoga.setTime(LocalTime.of(10, 0));
+        spinning.setName("Spinning de Alta Intensidad");
+        spinning.setDiscipline("Spinning");
+        spinning.setProfessor("Jorge Franco");
+        spinning.setDurationMinutes(45);
+        spinning.setCapacity(15);
+        spinning.setDayOfWeek(DayOfWeek.TUESDAY);
+        spinning.setTime(LocalTime.of(10, 0));
 
         ClassTemplate boxeo = new ClassTemplate();
         boxeo.setName("Boxeo Recreativo");
@@ -109,9 +111,9 @@ public class DataSeeder implements CommandLineRunner {
         classTemplateRepository.saveAll(List.of(yoga, funcional, spinning, boxeo));
         log.info("-> Plantillas de clases creadas.");
 
-        // --- Generar Clases Agendadas para las próximas 2 semanas ---
+        // --- Generar Clases Agendadas para las últimas 2 semanas y próximas 2 semanas ---
         LocalDate today = LocalDate.now();
-        for (int i = 0; i < 14; i++) {
+        for (int i = -14; i < 14; i++) { // Cambiar a -14 para incluir fechas pasadas
             LocalDate date = today.plusDays(i);
             for (ClassTemplate template : classTemplateRepository.findAll()) {
                 if (date.getDayOfWeek() == template.getDayOfWeek()) {
@@ -127,7 +129,59 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
         }
-        log.info("-> Clases agendadas para las próximas 2 semanas generadas.");
+        log.info("-> Clases agendadas para las últimas 2 semanas y próximas 2 semanas generadas.");
+
+        // --- Crear Reservas de Usuarios ---
+        createUserBookings(user1, user2, user3);
+        log.info("-> Reservas de usuarios creadas.");
+        
         log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
+    }
+
+    private void createUserBookings(User user1, User user2, User user3) {
+        // Obtener todas las clases agendadas
+        List<ScheduledClass> allClasses = scheduledClassRepository.findAll();
+        
+        // Matias se anota a Yoga y Funcional
+        createBookingForUser(user1, "Yoga Matutino", allClasses);
+        createBookingForUser(user1, "Funcional Intenso", allClasses);
+        
+        // Franco se anota a Spinning y Boxeo
+        createBookingForUser(user2, "Spinning de Alta Intensidad", allClasses);
+        createBookingForUser(user2, "Boxeo Recreativo", allClasses);
+        
+        // Horacio se anota a Yoga y Spinning
+        createBookingForUser(user3, "Yoga Matutino", allClasses);
+        createBookingForUser(user3, "Spinning de Alta Intensidad", allClasses);
+    }
+
+    private void createBookingForUser(User user, String className, List<ScheduledClass> allClasses) {
+        // Buscar la primera clase disponible con el nombre especificado
+        ScheduledClass targetClass = allClasses.stream()
+                .filter(clazz -> clazz.getName().equals(className))
+                .filter(clazz -> clazz.getEnrolledCount() < clazz.getCapacity())
+                .findFirst()
+                .orElse(null);
+
+        if (targetClass != null) {
+            // Crear la reserva
+            UserBooking booking = new UserBooking();
+            booking.setUserId(user.getId());
+            booking.setScheduledClassId(targetClass.getId());
+            booking.setClassName(targetClass.getName());
+            booking.setClassDateTime(targetClass.getDateTime());
+            booking.setCreationDate(LocalDateTime.now());
+            booking.setStatus(BookingStatus.CONFIRMED);
+            
+            bookingRepository.save(booking);
+            
+            // Actualizar el contador de inscritos
+            targetClass.setEnrolledCount(targetClass.getEnrolledCount() + 1);
+            scheduledClassRepository.save(targetClass);
+            
+            log.info("Reserva creada: {} para {} el {}", user.getName(), className, targetClass.getDateTime());
+        } else {
+            log.warn("No se pudo crear reserva para {} en {} - clase no disponible", user.getName(), className);
+        }
     }
 }
