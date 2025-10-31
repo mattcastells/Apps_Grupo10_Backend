@@ -62,11 +62,15 @@ public class AuthService {
     }
 
 
-    public void verifyEmail(String email, String otp) {
+    public String verifyEmail(String email, String otp) {
         otpService.validateOtp(email, otp);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
         user.setVerified(true);
         userRepository.save(user);
+        
+        // Generamos y retornamos el token JWT después de verificar el email
+        log.info("EMAIL VERIFIED FOR USER: " + user.getEmail());
+        return jwtService.generateToken(user.getId());
     }
 }

@@ -8,15 +8,20 @@ import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository) { this.userRepository = userRepository; }
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) { 
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     // Mantengo el create original por compatibilidad con otros flujos existentes
     public User createUser(UserCreationRequest request) {
@@ -58,7 +63,7 @@ public class UserService {
         if (req.getGender() != null)      user.setGender(req.getGender());
         if (req.getProfilePicture() != null) user.setProfilePicture(req.getProfilePicture());
         if (req.getPassword() != null && !req.getPassword().isBlank()) {
-            user.setPassword(req.getPassword()); // (pendiente: hashear en futuro)
+            user.setPassword(passwordEncoder.encode(req.getPassword()));
         }
 
         userRepository.save(user);

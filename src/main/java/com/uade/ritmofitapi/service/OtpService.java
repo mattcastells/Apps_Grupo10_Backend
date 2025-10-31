@@ -3,18 +3,20 @@ package com.uade.ritmofitapi.service;
 
 import com.uade.ritmofitapi.model.OTP;
 import com.uade.ritmofitapi.repository.OtpRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 
+@Slf4j
 @Service
 public class OtpService {
 
     private final OtpRepository otpRepository;
-    private final EmailService emailService;
+    // private final EmailService emailService; // Comentado para desarrollo
 
-    public OtpService(OtpRepository otpRepository, EmailService emailService) {
+    public OtpService(OtpRepository otpRepository) {
         this.otpRepository = otpRepository;
-        this.emailService = emailService;
+        // this.emailService = emailService; // Comentado para desarrollo
     }
 
     public void sendOtpForVerification(String email) {
@@ -22,9 +24,17 @@ public class OtpService {
         OTP userOtp = new OTP(email, otp);
         otpRepository.save(userOtp);
 
-        String subject = "Verifica tu cuenta en RitmoFit";
-        String body = "Hola,\n\nUsa este código para verificar tu email: " + otp + "\n\nEl código es válido por 10 minutos.";
-        emailService.sendEmail(email, subject, body);
+        // MODO DESARROLLO: Mostrar OTP en consola en lugar de enviar email
+        log.info("========================================");
+        log.info("🔐 OTP GENERADO PARA: {}", email);
+        log.info("📧 CÓDIGO: {}", otp);
+        log.info("⏰ Válido por 10 minutos");
+        log.info("========================================");
+        
+        // Comentado para desarrollo - descomentar cuando tengas email configurado
+        // String subject = "Verifica tu cuenta en RitmoFit";
+        // String body = "Hola,\n\nUsa este código para verificar tu email: " + otp + "\n\nEl código es válido por 10 minutos.";
+        // emailService.sendEmail(email, subject, body);
     }
 
     public void validateOtp(String email, String otp) {

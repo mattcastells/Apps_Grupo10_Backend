@@ -47,7 +47,8 @@ public class UserController {
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserRequest req) {
         try {
             userService.updateById(id, req);
-            return ResponseEntity.ok().build();
+            UserResponse updatedUser = userService.getById(id);
+            return ResponseEntity.ok(updatedUser);
         } catch (DuplicateKeyException dup) {
             return ResponseEntity.status(409).body("Email ya en uso");
         } catch (IllegalArgumentException bad) {

@@ -1,5 +1,6 @@
 package com.uade.ritmofitapi.service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.io.Decoders;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,19 @@ public class JwtService {
             // Token inválido por cualquier motivo (expirado, malformado, etc.)
             return false;
         }
+    }
+
+    public String extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.getSubject();
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private Key getSignInKey() {
