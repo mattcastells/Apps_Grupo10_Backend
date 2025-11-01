@@ -2,23 +2,16 @@ package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.request.LoginRequest;
 import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
-import com.uade.ritmofitapi.repository.OtpRepository;
-import com.uade.ritmofitapi.repository.UserRepository;
 import com.uade.ritmofitapi.service.AuthService;
-import com.uade.ritmofitapi.service.JwtService;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.uade.ritmofitapi.dto.request.LoginRequest; // Necesitarás un DTO para el login
-import com.uade.ritmofitapi.dto.request.RegisterRequest; // Y otro para el registro
-import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
-import com.uade.ritmofitapi.service.AuthService;
-import org.springframework.http.ResponseEntity;
+import com.uade.ritmofitapi.dto.request.RegisterRequest;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -38,6 +31,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
         String token = authService.login(request.getEmail(), request.getPassword());
+        log.info("SUCCESSFUL LOGIN FOR USER: " + request.getEmail());
         return ResponseEntity.ok(Map.of("token", token));
     }
 
