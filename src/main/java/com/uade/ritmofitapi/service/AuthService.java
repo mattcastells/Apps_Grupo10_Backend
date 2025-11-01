@@ -57,7 +57,6 @@ public class AuthService {
         user.setLastLogin(java.time.LocalDateTime.now());
         userRepository.save(user);
 
-        log.info("SUCCESSFUL LOGIN FOR USER: " + user.getEmail());
         return jwtService.generateToken(user.getId());
     }
 
