@@ -2,13 +2,11 @@ package com.uade.ritmofitapi.config;
 
 import com.uade.ritmofitapi.model.ClassTemplate;
 import com.uade.ritmofitapi.model.ScheduledClass;
+import com.uade.ritmofitapi.model.Location;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.BookingStatus;
 import com.uade.ritmofitapi.model.booking.UserBooking;
-import com.uade.ritmofitapi.repository.BookingRepository;
-import com.uade.ritmofitapi.repository.ClassTemplateRepository;
-import com.uade.ritmofitapi.repository.ScheduledClassRepository;
-import com.uade.ritmofitapi.repository.UserRepository;
+import com.uade.ritmofitapi.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,22 +21,24 @@ import java.util.List;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = true;
+    private final Boolean skip = false;
 
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
     private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LocationRepository locationRepository;
 
     public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
                       ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
-                      PasswordEncoder passwordEncoder) {
+                      PasswordEncoder passwordEncoder, LocationRepository locationRepository) {
         this.userRepository = userRepository;
         this.classTemplateRepository = classTemplateRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.bookingRepository = bookingRepository;
         this.passwordEncoder = passwordEncoder;
+        this.locationRepository = locationRepository;
     }
 
     @Override
@@ -54,6 +54,7 @@ public class DataSeeder implements CommandLineRunner {
         scheduledClassRepository.deleteAll();
         classTemplateRepository.deleteAll();
         userRepository.deleteAll();
+        locationRepository.deleteAll();
 
         // --- Crear Usuarios ---
 
@@ -72,48 +73,60 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.saveAll(List.of(user1, user2));
         log.info("-> Usuarios mock creados.");
 
+        // --- Crear Sedes ---
+        Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
+        Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
+        Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
+
+        // Guardar las sedes en la BD (ahora tienen ID)
+        locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
+
         // --- Crear Plantillas de Clases ---
-        ClassTemplate yoga = new ClassTemplate();
-        yoga.setId("6502251846b9a22a364b9010");
-        yoga.setName("Yoga Matutino");
-        yoga.setDiscipline("Yoga");
-        yoga.setProfessor("Ana López");
-        yoga.setDurationMinutes(60);
-        yoga.setCapacity(20);
-        yoga.setDayOfWeek(DayOfWeek.MONDAY);
-        yoga.setTime(LocalTime.of(9, 0));
+        ClassTemplate yogaBelgrano = new ClassTemplate();
+        yogaBelgrano.setId("6502251846b9a22a364b9010");
+        yogaBelgrano.setName("Yoga Matutino");
+        yogaBelgrano.setDiscipline("Yoga");
+        yogaBelgrano.setProfessor("Ana López");
+        yogaBelgrano.setDurationMinutes(60);
+        yogaBelgrano.setCapacity(20);
+        yogaBelgrano.setDayOfWeek(DayOfWeek.MONDAY);
+        yogaBelgrano.setTime(LocalTime.of(9, 0));
+        yogaBelgrano.setLocation(sedeBelgrano);
 
-        ClassTemplate funcional = new ClassTemplate();
-        funcional.setId("6502251846b9a22a364b9011");
-        funcional.setName("Funcional Intenso");
-        funcional.setDiscipline("Funcional");
-        funcional.setProfessor("Carlos Ruiz");
-        funcional.setDurationMinutes(45);
-        funcional.setCapacity(15);
-        funcional.setDayOfWeek(DayOfWeek.WEDNESDAY);
-        funcional.setTime(LocalTime.of(18, 30));
+        ClassTemplate funcionalCaballito = new ClassTemplate();
+        funcionalCaballito.setId("6502251846b9a22a364b9011");
+        funcionalCaballito.setName("Funcional Intenso");
+        funcionalCaballito.setDiscipline("Funcional");
+        funcionalCaballito.setProfessor("Carlos Ruiz");
+        funcionalCaballito.setDurationMinutes(45);
+        funcionalCaballito.setCapacity(15);
+        funcionalCaballito.setDayOfWeek(DayOfWeek.WEDNESDAY);
+        funcionalCaballito.setTime(LocalTime.of(18, 30));
+        funcionalCaballito.setLocation(sedeCaballito);
 
-        ClassTemplate spinning = new ClassTemplate();
-        spinning.setId("6502251846b9a22a364b9013");
-        spinning.setName("Spinning de Alta Intensidad");
-        spinning.setDiscipline("Spinning");
-        spinning.setProfessor("Jorge Franco");
-        spinning.setDurationMinutes(45);
-        spinning.setCapacity(15);
-        spinning.setDayOfWeek(DayOfWeek.TUESDAY);
-        spinning.setTime(LocalTime.of(10, 0));
+        ClassTemplate spinningPalermo = new ClassTemplate();
+        spinningPalermo.setId("6502251846b9a22a364b9013");
+        spinningPalermo.setName("Spinning de Alta Intensidad");
+        spinningPalermo.setDiscipline("Spinning");
+        spinningPalermo.setProfessor("Jorge Franco");
+        spinningPalermo.setDurationMinutes(45);
+        spinningPalermo.setCapacity(15);
+        spinningPalermo.setDayOfWeek(DayOfWeek.TUESDAY);
+        spinningPalermo.setTime(LocalTime.of(10, 0));
+        spinningPalermo.setLocation(sedePalermo);
 
-        ClassTemplate boxeo = new ClassTemplate();
-        boxeo.setId("6502251846b9a22a364b9012");
-        boxeo.setName("Boxeo Recreativo");
-        boxeo.setDiscipline("Boxeo");
-        boxeo.setProfessor("Pablo Pujol");
-        boxeo.setDurationMinutes(75);
-        boxeo.setCapacity(12);
-        boxeo.setDayOfWeek(DayOfWeek.FRIDAY);
-        boxeo.setTime(LocalTime.of(20, 0));
+        ClassTemplate boxeoBelgrano = new ClassTemplate();
+        boxeoBelgrano.setId("6502251846b9a22a364b9012");
+        boxeoBelgrano.setName("Boxeo Recreativo");
+        boxeoBelgrano.setDiscipline("Boxeo");
+        boxeoBelgrano.setProfessor("Pablo Pujol");
+        boxeoBelgrano.setDurationMinutes(75);
+        boxeoBelgrano.setCapacity(12);
+        boxeoBelgrano.setDayOfWeek(DayOfWeek.FRIDAY);
+        boxeoBelgrano.setTime(LocalTime.of(20, 0));
+        boxeoBelgrano.setLocation(sedeBelgrano);
 
-        classTemplateRepository.saveAll(List.of(yoga, funcional, spinning, boxeo));
+        classTemplateRepository.saveAll(List.of(yogaBelgrano, funcionalCaballito, spinningPalermo, boxeoBelgrano));
         log.info("-> Plantillas de clases creadas.");
 
         // --- Generar Clases Agendadas para las últimas 2 semanas y próximas 2 semanas ---
