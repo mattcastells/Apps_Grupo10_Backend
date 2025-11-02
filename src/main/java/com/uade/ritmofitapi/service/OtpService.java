@@ -17,7 +17,7 @@ public class OtpService {
         this.emailService = emailService;
     }
 
-    public void sendOtpForVerification(String email) {
+    public String sendOtpForVerification(String email) {
         String otp = generateOtp();
         OTP userOtp = new OTP(email, otp);
         otpRepository.save(userOtp);
@@ -25,6 +25,7 @@ public class OtpService {
         String subject = "Verifica tu cuenta en RitmoFit";
         String body = "Hola,\n\nUsa este código para verificar tu email: " + otp + "\n\nEl código es válido por 10 minutos.";
         emailService.sendEmail(email, subject, body);
+        return userOtp.getCode();
     }
 
     public void validateOtp(String email, String otp) {
