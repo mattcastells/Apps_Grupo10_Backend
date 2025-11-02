@@ -37,7 +37,8 @@ public class AuthService {
         userRepository.save(newUser);
 
         // Enviamos el OTP para la verificación del email
-        otpService.sendOtpForVerification(email);
+        String otp = otpService.sendOtpForVerification(email);
+        log.info("OTP para {}: {}", email, otp);
         return newUser;
     }
 
