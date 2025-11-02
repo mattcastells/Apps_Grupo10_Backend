@@ -2,6 +2,7 @@ package com.uade.ritmofitapi.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -18,4 +19,7 @@ public class ClassTemplate {
     private String professor;
     private DayOfWeek dayOfWeek;
     private LocalTime time;
+
+    @DBRef
+    private Location location; // Cada pertenece a una sede
 }
