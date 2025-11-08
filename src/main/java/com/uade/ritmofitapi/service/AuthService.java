@@ -69,4 +69,39 @@ public class AuthService {
         user.setVerified(true);
         userRepository.save(user);
     }
+
+    // --- Forgot Password: Enviar OTP para recuperación de contraseña ---
+    public void forgotPassword(String email) {
+        // Verificamos que el usuario existe
+        userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese email."));
+
+        // Enviamos el OTP usando el mismo servicio que en registro
+        String otp = otpService.sendOtpForVerification(email);
+        log.info("OTP de recuperación para {}: {}", email, otp);
+    }
+
+    // --- Verify Reset OTP: Validar OTP sin eliminarlo ---
+    public void verifyResetOtp(String email, String otp) {
+        // Validamos el OTP pero NO lo eliminamos (se necesita para el siguiente paso)
+        otpService.validateOtpWithoutDeleting(email, otp);
+    }
+
+    // --- Reset Password: Cambiar contraseña con OTP ---
+    public void resetPassword(String email, String otp, String newPassword) {
+        // Validamos el OTP y lo eliminamos
+        otpService.validateOtp(email, otp);
+
+        // Buscamos el usuario
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+
+        // Hasheamos la nueva contraseña con BCrypt (SEGURIDAD)
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(hashedPassword);
+
+        // Guardamos el usuario con la nueva contraseña
+        userRepository.save(user);
+        log.info("Contraseña actualizada exitosamente para: {}", email);
+    }
 }

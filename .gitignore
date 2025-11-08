@@ -31,3 +31,27 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Claude Code ###
+.claude/
+*.claude
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+logs/
+
+### Temporary Files ###
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
