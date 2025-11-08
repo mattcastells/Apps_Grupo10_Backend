@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,14 +27,19 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(@RequestBody BookingRequest bookingRequest) {
-        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+        // Obtener userId del JWT token
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
+
         BookingResponse newBooking = bookingService.create(bookingRequest, userId);
         return new ResponseEntity<>(newBooking, HttpStatus.CREATED);
     }
 
     @GetMapping("/my-bookings")
     public ResponseEntity<List<UserBookingDto>> getUserBookings() {
-        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+        // Obtener userId del JWT token
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
 
         List<UserBookingDto> bookings = bookingService.getAllByUserId(userId);
         return ResponseEntity.ok(bookings);
@@ -40,7 +47,9 @@ public class BookingController {
 
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(@PathVariable String bookingId) {
-        String userId = "6502251846b9a22a364b9011"; // Usa un ID de usuario mockeado
+        // Obtener userId del JWT token
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userId = auth.getName();
 
         bookingService.cancel(bookingId, userId);
         return ResponseEntity.noContent().build();

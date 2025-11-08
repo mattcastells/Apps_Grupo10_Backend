@@ -1,5 +1,6 @@
 package com.uade.ritmofitapi.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,10 +9,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -24,19 +29,20 @@ public class SecurityConfig {
                         // Permitimos el acceso público al calendario de clases
                         .requestMatchers("/api/v1/schedule/**").permitAll()
 
-                        // Por ahora, para poder probar el endpoint de booking, también lo dejaremos abierto.
-                        // ¡¡IMPORTANTE!! Esto es temporal. Lo aseguraremos cuando implementemos JWT.
-                        .requestMatchers("/api/v1/booking/**").permitAll()
+                        // BOOKING ahora requiere autenticación JWT
+                        .requestMatchers("/api/v1/booking/**").authenticated()
 
                         .requestMatchers("/api/v1/users/**").permitAll()
-                        
+
                         .requestMatchers("/api/v1/history/**").permitAll()
 
                         // Cualquier otra petición que no coincida con las reglas anteriores, requerirá autenticación.
                         .anyRequest().authenticated()
                 )
                 // Le indicamos a Spring que no cree sesiones, ya que usaremos un enfoque "stateless" con tokens.
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Agregamos el filtro JWT ANTES del filtro de autenticación de Spring
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
