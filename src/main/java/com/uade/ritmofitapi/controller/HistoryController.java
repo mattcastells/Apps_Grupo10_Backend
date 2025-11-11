@@ -2,10 +2,12 @@ package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.response.HistoryDetailResponse;
 import com.uade.ritmofitapi.dto.response.HistoryItemResponse;
+import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.service.HistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,12 +20,13 @@ public class HistoryController {
 
     private final HistoryService historyService;
 
-    @GetMapping("/users/{userId}")
+    @GetMapping("/user")
     public ResponseEntity<List<HistoryItemResponse>> getUserHistory(
-            @PathVariable String userId,
+            Authentication authentication,
             @RequestParam String from,
             @RequestParam String to) {
-        
+        User user = (User) authentication.getPrincipal();
+        String userId = user.getId();
         log.info("Getting history for user {} from {} to {}", userId, from, to);
         
         try {
