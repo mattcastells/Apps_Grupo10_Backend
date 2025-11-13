@@ -2,6 +2,7 @@ package com.uade.ritmofitapi.repository;
 
 import com.uade.ritmofitapi.model.ClassTemplate;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -9,4 +10,7 @@ import java.util.List;
 public interface ClassTemplateRepository extends MongoRepository<ClassTemplate, String> {
     List<ClassTemplate> findByProfessor(String professor);
     List<ClassTemplate> findByDiscipline(String discipline);
+
+    @Query(value = "{}", fields = "{ 'discipline' : 1, '_id' : 0 }")
+    List<String> findDistinctDiscipline();
 }

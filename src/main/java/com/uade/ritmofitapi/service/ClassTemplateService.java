@@ -45,4 +45,8 @@ public class ClassTemplateService {
     public Optional<ClassTemplate> getClassById(String id) {
         return classTemplateRepository.findById(id);
     }
+
+    public List<String> getAllDisciplines() {
+        return classTemplateRepository.findDistinctDiscipline();
+    }
 }
