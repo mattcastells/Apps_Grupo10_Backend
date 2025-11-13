@@ -1,11 +1,13 @@
 package com.uade.ritmofitapi.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
 @Document(collection = "scheduled_classes")
 public class ScheduledClass {
     @Id
@@ -18,4 +20,14 @@ public class ScheduledClass {
     private Integer durationMinutes;
     // Cantidad de alumnos anotados para la clase
     private Integer enrolledCount = 0;
+
+    public ScheduledClass(ClassTemplate template, LocalDateTime dateTime) {
+        this.templateId = template.getId();
+        this.name = template.getName();
+        this.professor = template.getProfessor();
+        this.durationMinutes = template.getDurationMinutes();
+        this.capacity = template.getCapacity();
+        this.dateTime = dateTime;
+        this.enrolledCount = 0;
+    }
 }
