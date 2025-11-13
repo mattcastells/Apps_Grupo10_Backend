@@ -52,7 +52,7 @@ public class HistoryController {
         }
     }
 
-    @GetMapping("/attendances/{attendanceId}")
+    @GetMapping("/{attendanceId}")
     public ResponseEntity<HistoryDetailResponse> getAttendanceDetail(
             @PathVariable String attendanceId) {
         
