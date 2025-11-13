@@ -20,6 +20,8 @@ public class JwtService {
     private String secretKey;
     @Value("${security.jwt.expiration-ms}")
     private long expiration;
+    @Value("${security.jwt.refresh-expiration-ms}")
+    private long refreshExpiration;
 
     public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -39,9 +41,27 @@ public class JwtService {
                 .compact();
     }
 
+    public String generateRefreshToken(String userId) {
+        return Jwts.builder()
+                .setSubject(userId)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .claim("type", "refresh")
+                .signWith(getSignInKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String userId = extractUserId(token);
         return (userId.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {

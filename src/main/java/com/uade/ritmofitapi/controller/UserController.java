@@ -9,6 +9,7 @@ import com.uade.ritmofitapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,8 +34,16 @@ public class UserController {
 
     // GET /users/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable String id) {
+    public ResponseEntity<?> getUser(Authentication authentication, @PathVariable String id) {
         try {
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda ver su propio perfil
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para ver este perfil");
+            }
+
             UserResponse resp = userService.getById(id);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException ex) {
@@ -44,10 +53,18 @@ public class UserController {
 
     // PUT /users/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserRequest req) {
+    public ResponseEntity<?> updateUser(Authentication authentication, @PathVariable String id, @RequestBody UserRequest req) {
         try {
-            userService.updateById(id, req);
-            return ResponseEntity.ok().build();
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda actualizar su propio perfil
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para actualizar este perfil");
+            }
+
+            UserResponse updatedUser = userService.updateById(id, req);
+            return ResponseEntity.ok(updatedUser);
         } catch (DuplicateKeyException dup) {
             return ResponseEntity.status(409).body("Email ya en uso");
         } catch (IllegalArgumentException bad) {
@@ -59,8 +76,16 @@ public class UserController {
 
     // PUT /users/{id}/photo
     @PutMapping("/{id}/photo")
-    public ResponseEntity<?> updatePhoto(@PathVariable String id, @RequestBody UpdatePhotoRequest req) {
+    public ResponseEntity<?> updatePhoto(Authentication authentication, @PathVariable String id, @RequestBody UpdatePhotoRequest req) {
         try {
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda actualizar su propia foto
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para actualizar esta foto");
+            }
+
             userService.updatePhoto(id, req);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException bad) {

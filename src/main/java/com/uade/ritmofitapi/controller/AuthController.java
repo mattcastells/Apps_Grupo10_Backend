@@ -38,8 +38,11 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     public ResponseEntity<Map<String, String>> verifyEmail(@RequestBody VerifyOtpRequest request) {
-        authService.verifyEmail(request.getEmail(), request.getOtp());
-        return ResponseEntity.ok(Map.of("message", "Email verificado correctamente."));
+        String token = authService.verifyEmail(request.getEmail(), request.getOtp());
+        return ResponseEntity.ok(Map.of(
+                "message", "Email verificado correctamente.",
+                "token", token
+        ));
     }
 
     @PostMapping("/forgot-password")

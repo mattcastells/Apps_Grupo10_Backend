@@ -31,6 +31,12 @@ public class AuthService {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("El email ya está en uso.");
         }
+
+        // Validar contraseña (mínimo 4 caracteres)
+        if (password == null || password.length() < 4) {
+            throw new RuntimeException("La contraseña debe tener al menos 4 caracteres.");
+        }
+
         // Hasheamos la contraseña antes de guardarla
         String hashedPassword = passwordEncoder.encode(password);
         User newUser = new User(name, email, hashedPassword, age, gender);
@@ -46,9 +52,10 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario o contraseña inválidos."));
 
-        //if (!user.isVerified()) {
-        //    throw new RuntimeException("Por favor, verifica tu email antes de iniciar sesión.");
-        //}
+        // Verificar que el email esté verificado
+        if (!user.isVerified()) {
+            throw new RuntimeException("Por favor, verifica tu email antes de iniciar sesión.");
+        }
 
         // Comparamos la contraseña enviada con el hash almacenado
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -62,12 +69,15 @@ public class AuthService {
     }
 
 
-    public void verifyEmail(String email, String otp) {
+    public String verifyEmail(String email, String otp) {
         otpService.validateOtp(email, otp);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
         user.setVerified(true);
         userRepository.save(user);
+
+        // Generamos y retornamos un JWT token para que el usuario quede autenticado inmediatamente
+        return jwtService.generateToken(user.getId());
     }
 
     // --- Forgot Password: Enviar OTP para recuperación de contraseña ---
@@ -91,6 +101,11 @@ public class AuthService {
     public void resetPassword(String email, String otp, String newPassword) {
         // Validamos el OTP y lo eliminamos
         otpService.validateOtp(email, otp);
+
+        // Validar la nueva contraseña (mínimo 4 caracteres)
+        if (newPassword == null || newPassword.length() < 4) {
+            throw new RuntimeException("La contraseña debe tener al menos 4 caracteres.");
+        }
 
         // Buscamos el usuario
         User user = userRepository.findByEmail(email)
