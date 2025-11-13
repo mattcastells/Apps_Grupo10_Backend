@@ -1,13 +1,14 @@
 package com.uade.ritmofitapi.controller;
 
+import com.uade.ritmofitapi.dto.request.ForgotPasswordRequest;
 import com.uade.ritmofitapi.dto.request.LoginRequest;
+import com.uade.ritmofitapi.dto.request.RegisterRequest;
+import com.uade.ritmofitapi.dto.request.ResetPasswordRequest;
 import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
+import com.uade.ritmofitapi.dto.request.VerifyResetOtpRequest;
 import com.uade.ritmofitapi.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import com.uade.ritmofitapi.dto.request.RegisterRequest;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -39,5 +40,23 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> verifyEmail(@RequestBody VerifyOtpRequest request) {
         authService.verifyEmail(request.getEmail(), request.getOtp());
         return ResponseEntity.ok(Map.of("message", "Email verificado correctamente."));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Código OTP enviado a tu email."));
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<Map<String, String>> verifyResetOtp(@RequestBody VerifyResetOtpRequest request) {
+        authService.verifyResetOtp(request.getEmail(), request.getOtp());
+        return ResponseEntity.ok(Map.of("message", "OTP verificado correctamente."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Contraseña restablecida exitosamente."));
     }
 }

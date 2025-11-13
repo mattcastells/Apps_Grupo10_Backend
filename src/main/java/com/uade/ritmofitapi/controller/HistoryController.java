@@ -2,12 +2,16 @@ package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.response.HistoryDetailResponse;
 import com.uade.ritmofitapi.dto.response.HistoryItemResponse;
+import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.service.HistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -18,16 +22,29 @@ public class HistoryController {
 
     private final HistoryService historyService;
 
-    @GetMapping("/users/{userId}")
+    @GetMapping("/me")
     public ResponseEntity<List<HistoryItemResponse>> getUserHistory(
-            @PathVariable String userId,
-            @RequestParam String from,
-            @RequestParam String to) {
+            Authentication authentication,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        User user = (User) authentication.getPrincipal();
+        String userId = user.getId();
+
+        String fromDate = from;
+        String toDate = to;
         
-        log.info("Getting history for user {} from {} to {}", userId, from, to);
+        if (from == null || to == null) {
+            LocalDate today = LocalDate.now();
+            LocalDate thirtyDaysAgo = today.minusDays(30);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            fromDate = thirtyDaysAgo.format(formatter);
+            toDate = today.format(formatter);
+        }
+
+        log.info("Getting history for user {} from {} to {}", userId, fromDate, toDate);
         
         try {
-            List<HistoryItemResponse> history = historyService.getUserHistory(userId, from, to);
+            List<HistoryItemResponse> history = historyService.getUserHistory(userId, fromDate, toDate);
             return ResponseEntity.ok(history);
         } catch (Exception e) {
             log.error("Error getting user history", e);
@@ -35,7 +52,7 @@ public class HistoryController {
         }
     }
 
-    @GetMapping("/attendances/{attendanceId}")
+    @GetMapping("/{attendanceId}")
     public ResponseEntity<HistoryDetailResponse> getAttendanceDetail(
             @PathVariable String attendanceId) {
         

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends MongoRepository<UserBooking, String> {
@@ -14,4 +15,5 @@ public interface BookingRepository extends MongoRepository<UserBooking, String> 
     Boolean existsByUserIdAndScheduledClassId(String userId, String scheduledClassId);
     Boolean existsByUserIdAndScheduledClassIdAndStatus(String userId, String scheduledClassId, BookingStatus status); // NUEVO
     List<UserBooking> findByUserIdAndClassDateTimeBetween(String userId, LocalDateTime start, LocalDateTime end);
+    Optional<UserBooking> findByUserIdAndScheduledClassId(String id, String id1);
 }

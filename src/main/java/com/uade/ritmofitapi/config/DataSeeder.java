@@ -1,8 +1,8 @@
 package com.uade.ritmofitapi.config;
 
 import com.uade.ritmofitapi.model.ClassTemplate;
-import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.Location;
+import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.BookingStatus;
 import com.uade.ritmofitapi.model.booking.UserBooking;
@@ -11,24 +11,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     private final Boolean skip = false;
-
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
     private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
     private final LocationRepository locationRepository;
+    private final Random random = new Random();
 
     public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
                       ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
@@ -43,163 +47,145 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
         if (skip) {
             log.info("Skipping DataSeeder...");
             return;
         }
 
-        // Limpiar datos para evitar duplicados en cada reinicio
+        // Clean slate
         bookingRepository.deleteAll();
         scheduledClassRepository.deleteAll();
         classTemplateRepository.deleteAll();
         userRepository.deleteAll();
         locationRepository.deleteAll();
 
-        // --- Crear Usuarios ---
+        // --- Create Locations ---
+        Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
+        Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
+        Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
+        locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
+        log.info("-> Sedes creadas.");
 
+        // --- Create Users ---
         User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
+        user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
         User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 35, "Masculino");
         User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
         User user4 = new User("Antonio", "antonio@uade.edu.ar", "1234", 24, "Masculino");
 
-        List<User> users = List.of(user1, user2, user3, user4);
-
+        List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4));
         for (User user : users) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             user.setVerified(true);
         }
-        user1.setId("6502251846b9a22a364b9011"); // Fijamos un ID para pruebas
-        userRepository.saveAll(List.of(user1, user2));
+        userRepository.saveAll(users);
         log.info("-> Usuarios mock creados.");
 
-        // --- Crear Sedes ---
-        Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
-        Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
-        Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
-
-        // Guardar las sedes en la BD (ahora tienen ID)
-        locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
-
-        // --- Crear Plantillas de Clases ---
-        ClassTemplate yogaBelgrano = new ClassTemplate();
-        yogaBelgrano.setId("6502251846b9a22a364b9010");
-        yogaBelgrano.setName("Yoga Matutino");
-        yogaBelgrano.setDiscipline("Yoga");
-        yogaBelgrano.setProfessor("Ana López");
-        yogaBelgrano.setDurationMinutes(60);
-        yogaBelgrano.setCapacity(20);
-        yogaBelgrano.setDayOfWeek(DayOfWeek.MONDAY);
-        yogaBelgrano.setTime(LocalTime.of(9, 0));
-        yogaBelgrano.setLocation(sedeBelgrano);
-
-        ClassTemplate funcionalCaballito = new ClassTemplate();
-        funcionalCaballito.setId("6502251846b9a22a364b9011");
-        funcionalCaballito.setName("Funcional Intenso");
-        funcionalCaballito.setDiscipline("Funcional");
-        funcionalCaballito.setProfessor("Carlos Ruiz");
-        funcionalCaballito.setDurationMinutes(45);
-        funcionalCaballito.setCapacity(15);
-        funcionalCaballito.setDayOfWeek(DayOfWeek.WEDNESDAY);
-        funcionalCaballito.setTime(LocalTime.of(18, 30));
-        funcionalCaballito.setLocation(sedeCaballito);
-
-        ClassTemplate spinningPalermo = new ClassTemplate();
-        spinningPalermo.setId("6502251846b9a22a364b9013");
-        spinningPalermo.setName("Spinning de Alta Intensidad");
-        spinningPalermo.setDiscipline("Spinning");
-        spinningPalermo.setProfessor("Jorge Franco");
-        spinningPalermo.setDurationMinutes(45);
-        spinningPalermo.setCapacity(15);
-        spinningPalermo.setDayOfWeek(DayOfWeek.TUESDAY);
-        spinningPalermo.setTime(LocalTime.of(10, 0));
-        spinningPalermo.setLocation(sedePalermo);
-
-        ClassTemplate boxeoBelgrano = new ClassTemplate();
-        boxeoBelgrano.setId("6502251846b9a22a364b9012");
-        boxeoBelgrano.setName("Boxeo Recreativo");
-        boxeoBelgrano.setDiscipline("Boxeo");
-        boxeoBelgrano.setProfessor("Pablo Pujol");
-        boxeoBelgrano.setDurationMinutes(75);
-        boxeoBelgrano.setCapacity(12);
-        boxeoBelgrano.setDayOfWeek(DayOfWeek.FRIDAY);
-        boxeoBelgrano.setTime(LocalTime.of(20, 0));
-        boxeoBelgrano.setLocation(sedeBelgrano);
-
-        classTemplateRepository.saveAll(List.of(yogaBelgrano, funcionalCaballito, spinningPalermo, boxeoBelgrano));
+        // --- Create Class Templates ---
+        createClassTemplates(sedeBelgrano, sedePalermo, sedeCaballito);
         log.info("-> Plantillas de clases creadas.");
 
-        // --- Generar Clases Agendadas para las últimas 2 semanas y próximas 2 semanas ---
+        // --- Generate Scheduled Classes for the last 4 weeks and next 4 weeks ---
+        generateScheduledClasses();
+        log.info("-> Clases agendadas generadas.");
+
+        // --- Create User Bookings (Past and Future) ---
+        createRealisticUserBookings(users);
+        log.info("-> Reservas de usuarios (pasadas y futuras) creadas.");
+
+        log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
+    }
+
+    private void createClassTemplates(Location sedeBelgrano, Location sedePalermo, Location sedeCaballito) {
+        List<ClassTemplate> templates = new ArrayList<>();
+
+        templates.add(new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.MONDAY, LocalTime.of(9, 0), sedeBelgrano));
+        templates.add(new ClassTemplate("Funcional Intenso", "Funcional", "Carlos Ruiz", 45, 15, DayOfWeek.WEDNESDAY, LocalTime.of(18, 30), sedeCaballito));
+        templates.add(new ClassTemplate("Spinning de Alta Intensidad", "Spinning", "Jorge Franco", 45, 15, DayOfWeek.TUESDAY, LocalTime.of(10, 0), sedePalermo));
+        templates.add(new ClassTemplate("Boxeo Recreativo", "Boxeo", "Pablo Pujol", 75, 12, DayOfWeek.FRIDAY, LocalTime.of(20, 0), sedeBelgrano));
+        templates.add(new ClassTemplate("Pilates Reformer", "Pilates", "Sofía Gómez", 50, 10, DayOfWeek.THURSDAY, LocalTime.of(17, 0), sedePalermo));
+        templates.add(new ClassTemplate("Zumba Party", "Zumba", "Valentina Díaz", 60, 25, DayOfWeek.SATURDAY, LocalTime.of(11, 0), sedeCaballito));
+        templates.add(new ClassTemplate("CrossFit Avanzado", "CrossFit", "Martín Herrera", 50, 18, DayOfWeek.TUESDAY, LocalTime.of(7, 30), sedeBelgrano));
+        templates.add(new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.THURSDAY, LocalTime.of(19, 0), sedeBelgrano));
+
+        classTemplateRepository.saveAll(templates);
+    }
+
+    private void generateScheduledClasses() {
         LocalDate today = LocalDate.now();
-        for (int i = -14; i < 14; i++) { // Cambiar a -14 para incluir fechas pasadas
+        List<ClassTemplate> templates = classTemplateRepository.findAll();
+        for (int i = -28; i < 28; i++) { // From 4 weeks ago to 4 weeks in the future
             LocalDate date = today.plusDays(i);
-            for (ClassTemplate template : classTemplateRepository.findAll()) {
+            for (ClassTemplate template : templates) {
                 if (date.getDayOfWeek() == template.getDayOfWeek()) {
-                    ScheduledClass scheduledClass = new ScheduledClass();
-                    scheduledClass.setTemplateId(template.getId());
-                    scheduledClass.setDateTime(LocalDateTime.of(date, template.getTime()));
-                    scheduledClass.setCapacity(template.getCapacity());
-                    scheduledClass.setDurationMinutes(template.getDurationMinutes());
-                    scheduledClass.setName(template.getName());
-                    scheduledClass.setProfessor(template.getProfessor());
-                    scheduledClass.setEnrolledCount(0);
+                    ScheduledClass scheduledClass = new ScheduledClass(template, LocalDateTime.of(date, template.getTime()));
                     scheduledClassRepository.save(scheduledClass);
                 }
             }
         }
-        log.info("-> Clases agendadas para las últimas 2 semanas y próximas 2 semanas generadas.");
-
-        // --- Crear Reservas de Usuarios ---
-        createUserBookings(user1, user2, user3);
-        log.info("-> Reservas de usuarios creadas.");
-        
-        log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
     }
 
-    private void createUserBookings(User user1, User user2, User user3) {
-        // Obtener todas las clases agendadas
-        List<ScheduledClass> allClasses = scheduledClassRepository.findAll();
-        
-        // Matias se anota a Yoga y Funcional
-        createBookingForUser(user1, "Yoga Matutino", allClasses);
-        createBookingForUser(user1, "Funcional Intenso", allClasses);
-        
-        // Franco se anota a Spinning y Boxeo
-        createBookingForUser(user2, "Spinning de Alta Intensidad", allClasses);
-        createBookingForUser(user2, "Boxeo Recreativo", allClasses);
-        
-        // Horacio se anota a Yoga y Spinning
-        createBookingForUser(user3, "Yoga Matutino", allClasses);
-        createBookingForUser(user3, "Spinning de Alta Intensidad", allClasses);
-    }
+    private void createRealisticUserBookings(List<User> users) {
+        List<ScheduledClass> allScheduledClasses = scheduledClassRepository.findAll();
+        LocalDateTime now = LocalDateTime.now();
 
-    private void createBookingForUser(User user, String className, List<ScheduledClass> allClasses) {
-        // Buscar la primera clase disponible con el nombre especificado
-        ScheduledClass targetClass = allClasses.stream()
-                .filter(clazz -> clazz.getName().equals(className))
-                .filter(clazz -> clazz.getEnrolledCount() < clazz.getCapacity())
-                .findFirst()
-                .orElse(null);
+        List<ScheduledClass> pastClasses = allScheduledClasses.stream()
+                .filter(sc -> sc.getDateTime().isBefore(now))
+                .collect(Collectors.toList());
 
-        if (targetClass != null) {
-            // Crear la reserva
-            UserBooking booking = new UserBooking();
-            booking.setUserId(user.getId());
-            booking.setScheduledClassId(targetClass.getId());
-            booking.setClassName(targetClass.getName());
-            booking.setClassDateTime(targetClass.getDateTime());
-            booking.setCreationDate(LocalDateTime.now());
-            booking.setStatus(BookingStatus.CONFIRMED);
-            
-            bookingRepository.save(booking);
-            
-            // Actualizar el contador de inscritos
-            targetClass.setEnrolledCount(targetClass.getEnrolledCount() + 1);
-            scheduledClassRepository.save(targetClass);
-            
-            log.info("Reserva creada: {} para {} el {}", user.getName(), className, targetClass.getDateTime());
-        } else {
-            log.warn("No se pudo crear reserva para {} en {} - clase no disponible", user.getName(), className);
+        List<ScheduledClass> futureClasses = allScheduledClasses.stream()
+                .filter(sc -> sc.getDateTime().isAfter(now))
+                .collect(Collectors.toList());
+
+        for (User user : users) {
+            // Create 2 to 4 past bookings
+            for (int i = 0; i < 2 + random.nextInt(3); i++) {
+                if (!pastClasses.isEmpty()) {
+                    ScheduledClass randomPastClass = pastClasses.get(random.nextInt(pastClasses.size()));
+                    createBooking(user, randomPastClass, BookingStatus.CONFIRMED);
+                }
+            }
+
+            // Create 2 to 4 future bookings
+            for (int i = 0; i < 2 + random.nextInt(3); i++) {
+                if (!futureClasses.isEmpty()) {
+                    ScheduledClass randomFutureClass = futureClasses.get(random.nextInt(futureClasses.size()));
+                    // 80% chance of CONFIRMED, 20% chance of CANCELLED
+                    BookingStatus status = random.nextDouble() < 0.8 ? BookingStatus.CONFIRMED : BookingStatus.CANCELLED;
+                    createBooking(user, randomFutureClass, status);
+                }
+            }
         }
+    }
+
+    private void createBooking(User user, ScheduledClass scheduledClass, BookingStatus status) {
+        // Avoid double booking the same class for the same user
+        if (bookingRepository.findByUserIdAndScheduledClassId(user.getId(), scheduledClass.getId()).isPresent()) {
+            return;
+        }
+
+        // Check capacity only for confirmed bookings
+        if (status == BookingStatus.CONFIRMED && scheduledClass.getEnrolledCount() >= scheduledClass.getCapacity()) {
+            log.warn("No se pudo crear reserva para {} en {} - Clase llena.", user.getName(), scheduledClass.getName());
+            return;
+        }
+
+        UserBooking booking = new UserBooking();
+        booking.setUserId(user.getId());
+        booking.setScheduledClassId(scheduledClass.getId());
+        booking.setClassName(scheduledClass.getName());
+        booking.setClassDateTime(scheduledClass.getDateTime());
+        booking.setCreationDate(LocalDateTime.now().minusDays(random.nextInt(10))); // Simulate booking was made some days ago
+        booking.setStatus(status);
+
+        bookingRepository.save(booking);
+
+        // Update enrolled count only if confirmed
+        if (status == BookingStatus.CONFIRMED) {
+            scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() + 1);
+            scheduledClassRepository.save(scheduledClass);
+        }
+
+        log.info("Reserva creada: {} para {} en {} con estado {}", user.getName(), scheduledClass.getName(), scheduledClass.getDateTime(), status);
     }
 }

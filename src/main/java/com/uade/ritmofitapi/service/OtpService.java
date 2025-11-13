@@ -39,6 +39,17 @@ public class OtpService {
         otpRepository.delete(storedOtp);
     }
 
+    // Validar OTP sin eliminarlo (usado en verify-reset-otp)
+    public void validateOtpWithoutDeleting(String email, String otp) {
+        OTP storedOtp = otpRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Código OTP inválido o expirado."));
+
+        if (!otp.equals(storedOtp.getCode())) {
+            throw new RuntimeException("Código OTP inválido.");
+        }
+        // NO eliminamos el OTP aquí, se eliminará en resetPassword
+    }
+
     private String generateOtp() {
         return String.format("%06d", new SecureRandom().nextInt(1000000));
     }
