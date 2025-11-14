@@ -19,7 +19,7 @@ public class RateLimitService {
     /**
      * Valida si un email puede solicitar un nuevo OTP.
      * Reglas:
-     * - Máximo 1 OTP cada 2 minutos
+     * - Máximo 1 OTP cada 30 segundos
      * - Máximo 5 OTP por hora
      *
      * @param email Email a validar
@@ -35,8 +35,8 @@ public class RateLimitService {
         // Verificar: último request fue hace menos de 2 minutos
         if (!requests.isEmpty()) {
             LocalDateTime lastRequest = requests.get(requests.size() - 1);
-            if (lastRequest.isAfter(now.minusMinutes(2))) {
-                long secondsToWait = java.time.Duration.between(now, lastRequest.plusMinutes(2)).getSeconds();
+            if (lastRequest.isAfter(now.minusSeconds(30))) {
+                long secondsToWait = java.time.Duration.between(now, lastRequest.plusSeconds(30)).getSeconds();
                 throw new RuntimeException(
                     "Debes esperar " + secondsToWait + " segundos antes de solicitar un nuevo código OTP."
                 );

@@ -105,6 +105,26 @@ public class AuthService {
         return jwtService.generateToken(user.getId());
     }
 
+    /**
+     * Reenviar OTP para verificación de email
+     * Permite a usuarios que no recibieron o perdieron su código OTP inicial solicitar uno nuevo
+     */
+    public void resendOtp(String email) {
+        // Verificar que el usuario existe
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese email."));
+
+        // Verificar que el usuario NO esté ya verificado
+        if (user.isVerified()) {
+            throw new RuntimeException("Este email ya está verificado.");
+        }
+
+        // Enviar nuevo OTP usando el servicio existente
+        // El RateLimitService ya está integrado en sendOtpForVerification
+        String otp = otpService.sendOtpForVerification(email);
+        log.info("OTP reenviado para {}: {}", email, otp);
+    }
+
     // --- Forgot Password: Enviar OTP para recuperación de contraseña ---
     public void forgotPassword(String email) {
         // Verificamos que el usuario existe

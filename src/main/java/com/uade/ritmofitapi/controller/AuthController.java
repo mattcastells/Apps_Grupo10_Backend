@@ -3,6 +3,7 @@ package com.uade.ritmofitapi.controller;
 import com.uade.ritmofitapi.dto.request.ForgotPasswordRequest;
 import com.uade.ritmofitapi.dto.request.LoginRequest;
 import com.uade.ritmofitapi.dto.request.RegisterRequest;
+import com.uade.ritmofitapi.dto.request.ResendOtpRequest;
 import com.uade.ritmofitapi.dto.request.ResetPasswordRequest;
 import com.uade.ritmofitapi.dto.request.VerifyOtpRequest;
 import com.uade.ritmofitapi.dto.request.VerifyResetOtpRequest;
@@ -43,6 +44,12 @@ public class AuthController {
                 "message", "Email verificado correctamente.",
                 "token", token
         ));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<Map<String, String>> resendOtp(@RequestBody ResendOtpRequest request) {
+        authService.resendOtp(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Código OTP reenviado a tu email."));
     }
 
     @PostMapping("/forgot-password")

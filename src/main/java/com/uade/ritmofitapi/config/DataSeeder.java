@@ -96,8 +96,8 @@ public class DataSeeder implements CommandLineRunner {
             String hashedPassword = passwordEncoder.encode(plainPassword);
             user.setPassword(hashedPassword);
             user.setVerified(true);
-            log.info("Creating user: {} | Plain password: {} | Hash starts with: {}",
-                     user.getEmail(), plainPassword, hashedPassword.substring(0, 20) + "...");
+            log.info("Creating user: {} | Hash starts with: {}",
+                     user.getEmail(), hashedPassword.substring(0, 20) + "...");
         }
 
         userRepository.saveAll(users);
