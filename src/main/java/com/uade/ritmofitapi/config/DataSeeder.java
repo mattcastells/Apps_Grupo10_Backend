@@ -224,28 +224,28 @@ public class DataSeeder implements CommandLineRunner {
         News news1 = new News();
         news1.setTitle("Nueva Sede en Recoleta");
         news1.setContent("¡Estamos emocionados de anunciar la apertura de nuestra nueva sede en Recoleta! Con equipamiento de última generación y un equipo de profesionales altamente capacitados.");
-        news1.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/gym-opening_hlcacn.jpg");
+        news1.setImageUrl("https://res.cloudinary.com/do7lo4pkj/image/upload/v1763109160/nueva_sede_f4slx4.jpg");
         news1.setPublishedDate(LocalDateTime.now().minusDays(2));
         news1.setCreatedAt(LocalDateTime.now().minusDays(2));
 
         News news2 = new News();
         news2.setTitle("Horarios Especiales - Feriados");
         news2.setContent("Durante los próximos feriados, el gimnasio tendrá horarios especiales. Consulta en recepción o en nuestra app los nuevos horarios disponibles.");
-        news2.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/schedule_change_pcqgam.jpg");
+        news2.setImageUrl("https://res.cloudinary.com/do7lo4pkj/image/upload/v1763109160/feriados_k0o7d2.jpg");
         news2.setPublishedDate(LocalDateTime.now().minusDays(5));
         news2.setCreatedAt(LocalDateTime.now().minusDays(5));
 
         News news3 = new News();
         news3.setTitle("Desafío RitmoFit 30 Días");
         news3.setContent("¡Únete al Desafío RitmoFit de 30 días! Participa asistiendo a 20 clases en un mes y obtén un mes gratis. Inscripciones abiertas hasta fin de mes.");
-        news3.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/challenge_30_days_bmfplr.jpg");
+        news3.setImageUrl("https://res.cloudinary.com/do7lo4pkj/image/upload/v1763109162/desafio_cx2j6j.jpg");
         news3.setPublishedDate(LocalDateTime.now().minusDays(8));
         news3.setCreatedAt(LocalDateTime.now().minusDays(8));
 
         News news4 = new News();
         news4.setTitle("Nuevas Clases de Yoga Aéreo");
         news4.setContent("A partir de la próxima semana incorporamos clases de Yoga Aéreo. Una experiencia única que combina flexibilidad, fuerza y diversión. Cupos limitados.");
-        news4.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/aerial_yoga_u3r0wr.jpg");
+        news4.setImageUrl("https://res.cloudinary.com/do7lo4pkj/image/upload/v1763109160/yoga_aereo_npdtua.jpg");
         news4.setPublishedDate(LocalDateTime.now().minusDays(12));
         news4.setCreatedAt(LocalDateTime.now().minusDays(12));
 
