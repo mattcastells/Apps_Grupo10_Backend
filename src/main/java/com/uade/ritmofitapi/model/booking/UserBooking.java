@@ -20,4 +20,6 @@ public class UserBooking {
     private BookingStatus status;
     private String className;
     private LocalDateTime classDateTime;
+    private String location;
+    private Integer durationMinutes;
 }

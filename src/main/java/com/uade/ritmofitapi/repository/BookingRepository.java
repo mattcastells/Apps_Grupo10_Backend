@@ -12,8 +12,9 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends MongoRepository<UserBooking, String> {
     List<UserBooking> findAllByUserId(String userId);
+    List<UserBooking> findAllByUserIdAndStatus(String userId, BookingStatus status);
     Boolean existsByUserIdAndScheduledClassId(String userId, String scheduledClassId);
-    Boolean existsByUserIdAndScheduledClassIdAndStatus(String userId, String scheduledClassId, BookingStatus status); // NUEVO
+    Boolean existsByUserIdAndScheduledClassIdAndStatus(String userId, String scheduledClassId, BookingStatus status);
     List<UserBooking> findByUserIdAndClassDateTimeBetween(String userId, LocalDateTime start, LocalDateTime end);
     Optional<UserBooking> findByUserIdAndScheduledClassId(String id, String id1);
 }

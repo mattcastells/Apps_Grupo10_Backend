@@ -4,8 +4,6 @@ import com.uade.ritmofitapi.model.ClassTemplate;
 import com.uade.ritmofitapi.model.Location;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
-import com.uade.ritmofitapi.model.booking.BookingStatus;
-import com.uade.ritmofitapi.model.booking.UserBooking;
 import com.uade.ritmofitapi.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -18,8 +16,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -32,7 +28,6 @@ public class DataSeeder implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
     private final LocationRepository locationRepository;
-    private final Random random = new Random();
 
     public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
                       ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
@@ -89,9 +84,9 @@ public class DataSeeder implements CommandLineRunner {
         generateScheduledClasses();
         log.info("-> Clases agendadas generadas.");
 
-        // --- Create User Bookings (Past and Future) ---
-        createRealisticUserBookings(users);
-        log.info("-> Reservas de usuarios (pasadas y futuras) creadas.");
+        // --- User Bookings are NOT pre-created ---
+        // Users should create their own bookings through the app
+        log.info("-> No se crean reservas automáticas. Los usuarios deben reservar desde la app.");
 
         log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
     }
@@ -123,69 +118,5 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
         }
-    }
-
-    private void createRealisticUserBookings(List<User> users) {
-        List<ScheduledClass> allScheduledClasses = scheduledClassRepository.findAll();
-        LocalDateTime now = LocalDateTime.now();
-
-        List<ScheduledClass> pastClasses = allScheduledClasses.stream()
-                .filter(sc -> sc.getDateTime().isBefore(now))
-                .collect(Collectors.toList());
-
-        List<ScheduledClass> futureClasses = allScheduledClasses.stream()
-                .filter(sc -> sc.getDateTime().isAfter(now))
-                .collect(Collectors.toList());
-
-        for (User user : users) {
-            // Create 2 to 4 past bookings
-            for (int i = 0; i < 2 + random.nextInt(3); i++) {
-                if (!pastClasses.isEmpty()) {
-                    ScheduledClass randomPastClass = pastClasses.get(random.nextInt(pastClasses.size()));
-                    createBooking(user, randomPastClass, BookingStatus.CONFIRMED);
-                }
-            }
-
-            // Create 2 to 4 future bookings
-            for (int i = 0; i < 2 + random.nextInt(3); i++) {
-                if (!futureClasses.isEmpty()) {
-                    ScheduledClass randomFutureClass = futureClasses.get(random.nextInt(futureClasses.size()));
-                    // 80% chance of CONFIRMED, 20% chance of CANCELLED
-                    BookingStatus status = random.nextDouble() < 0.8 ? BookingStatus.CONFIRMED : BookingStatus.CANCELLED;
-                    createBooking(user, randomFutureClass, status);
-                }
-            }
-        }
-    }
-
-    private void createBooking(User user, ScheduledClass scheduledClass, BookingStatus status) {
-        // Avoid double booking the same class for the same user
-        if (bookingRepository.findByUserIdAndScheduledClassId(user.getId(), scheduledClass.getId()).isPresent()) {
-            return;
-        }
-
-        // Check capacity only for confirmed bookings
-        if (status == BookingStatus.CONFIRMED && scheduledClass.getEnrolledCount() >= scheduledClass.getCapacity()) {
-            log.warn("No se pudo crear reserva para {} en {} - Clase llena.", user.getName(), scheduledClass.getName());
-            return;
-        }
-
-        UserBooking booking = new UserBooking();
-        booking.setUserId(user.getId());
-        booking.setScheduledClassId(scheduledClass.getId());
-        booking.setClassName(scheduledClass.getName());
-        booking.setClassDateTime(scheduledClass.getDateTime());
-        booking.setCreationDate(LocalDateTime.now().minusDays(random.nextInt(10))); // Simulate booking was made some days ago
-        booking.setStatus(status);
-
-        bookingRepository.save(booking);
-
-        // Update enrolled count only if confirmed
-        if (status == BookingStatus.CONFIRMED) {
-            scheduledClass.setEnrolledCount(scheduledClass.getEnrolledCount() + 1);
-            scheduledClassRepository.save(scheduledClass);
-        }
-
-        log.info("Reserva creada: {} para {} en {} con estado {}", user.getName(), scheduledClass.getName(), scheduledClass.getDateTime(), status);
     }
 }

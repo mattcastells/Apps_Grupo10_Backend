@@ -10,8 +10,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class UserBookingDto {
     private String bookingId;
+    private String scheduledClassId;
     private String className;
     private LocalDateTime classDateTime;
     private String professor;
+    private String location;
+    private Integer durationMinutes;
     private String status;
 }
