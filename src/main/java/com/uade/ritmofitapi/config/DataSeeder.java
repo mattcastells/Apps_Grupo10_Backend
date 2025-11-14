@@ -31,7 +31,7 @@ import java.util.Collections;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = false;
+    private final Boolean skip = true;
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
