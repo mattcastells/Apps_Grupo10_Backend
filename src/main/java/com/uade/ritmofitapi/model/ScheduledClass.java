@@ -18,7 +18,9 @@ public class ScheduledClass {
     private String name;
     private String professor;
     private Integer durationMinutes;
-    // Cantidad de alumnos anotados para la clase
+    private String discipline;
+    private String location;
+
     private Integer enrolledCount = 0;
 
     public ScheduledClass(ClassTemplate template, LocalDateTime dateTime) {
@@ -27,6 +29,8 @@ public class ScheduledClass {
         this.professor = template.getProfessor();
         this.durationMinutes = template.getDurationMinutes();
         this.capacity = template.getCapacity();
+        this.discipline = template.getDiscipline();
+        this.location = template.getLocation() != null ? template.getLocation().getName() : null;
         this.dateTime = dateTime;
         this.enrolledCount = 0;
     }

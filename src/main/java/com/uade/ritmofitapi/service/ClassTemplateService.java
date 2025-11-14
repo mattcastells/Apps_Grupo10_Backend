@@ -47,6 +47,10 @@ public class ClassTemplateService {
     }
 
     public List<String> getAllDisciplines() {
-        return classTemplateRepository.findDistinctDiscipline();
+        return classTemplateRepository.findAll().stream()
+                .map(ClassTemplate::getDiscipline)
+                .distinct()
+                .sorted()
+                .toList();
     }
 }

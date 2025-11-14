@@ -13,6 +13,8 @@ public class ScheduledClassDto {
     private String id;
     private String name;
     private String professor;
+    private String discipline;
+    private String location;
     private LocalDateTime dateTime;
     private Integer durationMinutes;
     private Integer availableSlots;

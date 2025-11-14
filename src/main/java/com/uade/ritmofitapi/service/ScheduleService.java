@@ -47,6 +47,8 @@ public class ScheduleService {
                 scheduledClass.getId(),
                 scheduledClass.getName(),
                 scheduledClass.getProfessor(),
+                scheduledClass.getDiscipline(),
+                scheduledClass.getLocation(),
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
                 availableSlots
