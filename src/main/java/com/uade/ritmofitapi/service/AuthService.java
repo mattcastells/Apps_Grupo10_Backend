@@ -50,22 +50,35 @@ public class AuthService {
     }
 
     public String login(String email, String password) {
+        log.info("🔐 Login attempt for email: {}", email);
+
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidCredentialsException("Usuario o contraseña inválidos."));
+                .orElseThrow(() -> {
+                    log.warn("❌ User not found: {}", email);
+                    return new InvalidCredentialsException("Usuario o contraseña inválidos.");
+                });
+
+        log.info("✅ User found: {} (verified: {})", email, user.isVerified());
 
         // Verificar que el email esté verificado
         if (!user.isVerified()) {
+            log.warn("⚠️ User not verified: {}", email);
             throw new InvalidCredentialsException("Por favor, verifica tu email antes de iniciar sesión.");
         }
 
         // Comparamos la contraseña enviada con el hash almacenado
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        boolean passwordMatches = passwordEncoder.matches(password, user.getPassword());
+        log.info("🔑 Password match result for {}: {}", email, passwordMatches);
+
+        if (!passwordMatches) {
+            log.warn("❌ Invalid password for user: {}", email);
             throw new InvalidCredentialsException("Usuario o contraseña inválidos.");
         }
 
         user.setLastLogin(java.time.LocalDateTime.now());
         userRepository.save(user);
 
+        log.info("✅ Login successful for: {}", email);
         return jwtService.generateToken(user.getId());
     }
 
