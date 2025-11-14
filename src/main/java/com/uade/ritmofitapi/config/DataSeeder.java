@@ -7,7 +7,12 @@ import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.BookingStatus;
 import com.uade.ritmofitapi.model.booking.UserBooking;
-import com.uade.ritmofitapi.repository.*;
+import com.uade.ritmofitapi.repository.UserRepository;
+import com.uade.ritmofitapi.repository.ClassTemplateRepository;
+import com.uade.ritmofitapi.repository.ScheduledClassRepository;
+import com.uade.ritmofitapi.repository.BookingRepository;
+import com.uade.ritmofitapi.repository.LocationRepository;
+import com.uade.ritmofitapi.repository.NewsRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -132,11 +137,6 @@ public class DataSeeder implements CommandLineRunner {
         log.info("-> Noticias creadas.");
 
         log.info("🎉 ===== DATOS MOCK CARGADOS CORRECTAMENTE =====");
-        log.info("📧 Usuarios disponibles para login (password: 12345678):");
-        log.info("   - matias@uade.edu.ar");
-        log.info("   - franco@uade.edu.ar");
-        log.info("   - horacio@uade.edu.ar");
-        log.info("   - antonio@uade.edu.ar");
     }
 
     private void createClassTemplates(Location sedeBelgrano, Location sedePalermo, Location sedeCaballito) {

@@ -105,8 +105,7 @@ public class ScheduleService {
                 scheduledClass.getLocation(),
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
-                availableSlots,
-                locationName
+                availableSlots
         );
     }
 }

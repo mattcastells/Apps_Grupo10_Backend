@@ -20,7 +20,6 @@ public class ScheduledClass {
     private String name;
     private String professor;
     private Integer durationMinutes;
-    private String discipline;
     private String location;
 
     private Integer enrolledCount = 0;
