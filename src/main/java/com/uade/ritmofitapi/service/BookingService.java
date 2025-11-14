@@ -5,6 +5,7 @@ import com.uade.ritmofitapi.dto.request.BookingRequest;
 
 import com.uade.ritmofitapi.dto.response.UserBookingDto;
 import com.uade.ritmofitapi.exception.AlreadyBookedException;
+import com.uade.ritmofitapi.exception.UserNotFoundException;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.model.booking.UserBooking;
@@ -42,7 +43,7 @@ public class BookingService {
     @Transactional
     public BookingResponse create(BookingRequest bookingRequest, String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + userId));
 
         ScheduledClass scheduledClass = scheduledClassRepository.findById(bookingRequest.getScheduledClassId())
                 .orElseThrow(() -> new RuntimeException("Clase agendada no encontrada con ID: " + bookingRequest.getScheduledClassId()));
@@ -113,7 +114,7 @@ public class BookingService {
 
     public List<UserBookingDto> getAllByUserId(String userId) {
         if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+            throw new UserNotFoundException("Usuario no encontrado con ID: " + userId);
         }
 
         List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);
@@ -132,7 +133,7 @@ public class BookingService {
      */
     public List<UserBookingDto> getAllBookingsHistory(String userId) {
         if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+            throw new UserNotFoundException("Usuario no encontrado con ID: " + userId);
         }
 
         List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);
@@ -149,7 +150,7 @@ public class BookingService {
      */
     public List<String> getBookedClassIds(String userId) {
         if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+            throw new UserNotFoundException("Usuario no encontrado con ID: " + userId);
         }
 
         List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);

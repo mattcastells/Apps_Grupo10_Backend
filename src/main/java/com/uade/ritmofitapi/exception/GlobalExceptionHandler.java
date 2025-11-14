@@ -54,6 +54,17 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String,Object>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", 401,
+                        "error", "Unauthorized",
+                        "message", "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+                ));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String,Object>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
