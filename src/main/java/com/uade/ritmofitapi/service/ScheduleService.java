@@ -2,6 +2,7 @@ package com.uade.ritmofitapi.service;
 
 import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
 import com.uade.ritmofitapi.model.ScheduledClass;
+import com.uade.ritmofitapi.repository.LocationRepository;
 import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,12 @@ import java.util.stream.Collectors;
 public class ScheduleService {
 
     private final ScheduledClassRepository scheduledClassRepository;
+    private final LocationRepository locationRepository;
 
-    public ScheduleService(ScheduledClassRepository scheduledClassRepository) {
+    public ScheduleService(ScheduledClassRepository scheduledClassRepository,
+                           LocationRepository locationRepository) {
         this.scheduledClassRepository = scheduledClassRepository;
+        this.locationRepository = locationRepository;
     }
 
     public List<ScheduledClassDto> getWeeklySchedule() {
@@ -85,13 +89,22 @@ public class ScheduleService {
 
     private ScheduledClassDto mapToDto(ScheduledClass scheduledClass) {
         int availableSlots = scheduledClass.getCapacity() - scheduledClass.getEnrolledCount();
+
+        String locationName = "Sede no disponible";
+        if (scheduledClass.getLocationId() != null) {
+            locationName = locationRepository.findById(scheduledClass.getLocationId())
+                    .map(loc -> loc.getName())
+                    .orElse("Sede no disponible");
+        }
+
         return new ScheduledClassDto(
                 scheduledClass.getId(),
                 scheduledClass.getName(),
                 scheduledClass.getProfessor(),
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
-                availableSlots
+                availableSlots,
+                locationName
         );
     }
 }

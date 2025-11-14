@@ -1,6 +1,7 @@
 package com.uade.ritmofitapi.config;
 
 import com.uade.ritmofitapi.service.JwtService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 
 @Component
@@ -54,7 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userId = jwtService.getUserIdFromToken(jwt);
 
                 // Crear la autenticación con el userId como principal
-                // El userId será accesible mediante SecurityContextHolder.getContext().getAuthentication().getName()
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userId,  // principal (será retornado por auth.getName())
                         null,    // credentials (no necesarias después de autenticar)
@@ -66,11 +67,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Setear la autenticación en el contexto de Spring Security
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
-        } catch (Exception e) {
-            // Si hay algún error al procesar el token, simplemente no autenticamos
-            // (el endpoint puede ser público o retornar 403 si es protegido)
-        }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // TOKEN INVÁLIDO O EXPIRADO: Devolver 401 Unauthorized (NO 403)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(
+                "{\"timestamp\":\"" + Instant.now() + "\"," +
+                "\"status\":401," +
+                "\"error\":\"Unauthorized\"," +
+                "\"message\":\"Token inválido o expirado. Por favor, inicia sesión nuevamente.\"}"
+            );
+            // No continuar con el filterChain
+        }
     }
 }
