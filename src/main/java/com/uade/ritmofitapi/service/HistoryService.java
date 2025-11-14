@@ -40,11 +40,25 @@ public class HistoryService {
             to.atTime(23, 59, 59)
         );
         
-        // Filter only confirmed bookings for past classes
+        log.info("Found {} bookings in date range for user {}", bookings.size(), userId);
+        
+        // Filter bookings for past classes with attendance status
+        // Valid statuses: CONFIRMED, EXPIRED (not yet marked), ATTENDED (presente), ABSENT (ausente)
         List<UserBooking> pastBookings = bookings.stream()
-            .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
-            .filter(booking -> booking.getClassDateTime().isBefore(LocalDateTime.now()))
+            .filter(booking -> {
+                boolean isValidStatus = booking.getStatus() == BookingStatus.CONFIRMED 
+                                     || booking.getStatus() == BookingStatus.EXPIRED
+                                     || booking.getStatus() == BookingStatus.ATTENDED
+                                     || booking.getStatus() == BookingStatus.ABSENT;
+                boolean isPast = booking.getClassDateTime().isBefore(LocalDateTime.now());
+                log.info("Booking {}: class={}, dateTime={}, status={}, isPast={}, isValidStatus={}", 
+                    booking.getId(), booking.getClassName(), booking.getClassDateTime(), 
+                    booking.getStatus(), isPast, isValidStatus);
+                return isValidStatus && isPast;
+            })
             .collect(Collectors.toList());
+        
+        log.info("Filtered to {} past bookings (all attendance statuses)", pastBookings.size());
         
         // Convert to response DTOs
         return pastBookings.stream()
@@ -71,13 +85,15 @@ public class HistoryService {
         if (scheduledClass != null) {
             response.setTeacher(scheduledClass.getProfessor());
             response.setDurationMinutes(scheduledClass.getDurationMinutes());
+            response.setSite(scheduledClass.getLocation());
+            response.setLocation(scheduledClass.getLocation());
         } else {
             response.setTeacher("Profesor");
             response.setDurationMinutes(60);
+            response.setSite(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
+            response.setLocation(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
         }
         
-        response.setSite("Sede Centro"); // TODO: Get from configuration
-        response.setLocation("Av. ... 123"); // TODO: Get from configuration
         response.setStartDateTime(booking.getClassDateTime().format(dateTimeFormatter));
         
         return response;
@@ -93,13 +109,15 @@ public class HistoryService {
         if (scheduledClass != null) {
             response.setTeacher(scheduledClass.getProfessor());
             response.setDurationMinutes(scheduledClass.getDurationMinutes());
+            response.setSite(scheduledClass.getLocation());
+            response.setLocation(scheduledClass.getLocation());
         } else {
             response.setTeacher("Profesor");
             response.setDurationMinutes(60);
+            response.setSite(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
+            response.setLocation(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
         }
         
-        response.setSite("Sede Centro"); // TODO: Get from configuration
-        response.setLocation("Av. ... 123"); // TODO: Get from configuration
         response.setStartDateTime(booking.getClassDateTime().format(dateTimeFormatter));
         response.setAttendanceStatus(booking.getStatus().name());
         response.setUserReview(null); // TODO: Implement review system

@@ -2,8 +2,11 @@ package com.uade.ritmofitapi.config;
 
 import com.uade.ritmofitapi.model.ClassTemplate;
 import com.uade.ritmofitapi.model.Location;
+import com.uade.ritmofitapi.model.News;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.User;
+import com.uade.ritmofitapi.model.booking.BookingStatus;
+import com.uade.ritmofitapi.model.booking.UserBooking;
 import com.uade.ritmofitapi.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -16,6 +19,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.Collections;
 
 @Slf4j
 @Component
@@ -28,16 +33,19 @@ public class DataSeeder implements CommandLineRunner {
     private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
     private final LocationRepository locationRepository;
+    private final NewsRepository newsRepository;
 
     public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
                       ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
-                      PasswordEncoder passwordEncoder, LocationRepository locationRepository) {
+                      PasswordEncoder passwordEncoder, LocationRepository locationRepository,
+                      NewsRepository newsRepository) {
         this.userRepository = userRepository;
         this.classTemplateRepository = classTemplateRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.bookingRepository = bookingRepository;
         this.passwordEncoder = passwordEncoder;
         this.locationRepository = locationRepository;
+        this.newsRepository = newsRepository;
     }
 
     @Override
@@ -53,6 +61,7 @@ public class DataSeeder implements CommandLineRunner {
         classTemplateRepository.deleteAll();
         userRepository.deleteAll();
         locationRepository.deleteAll();
+        newsRepository.deleteAll();
 
         // --- Create Locations ---
         Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
@@ -84,9 +93,13 @@ public class DataSeeder implements CommandLineRunner {
         generateScheduledClasses();
         log.info("-> Clases agendadas generadas.");
 
-        // --- User Bookings are NOT pre-created ---
-        // Users should create their own bookings through the app
-        log.info("-> No se crean reservas automáticas. Los usuarios deben reservar desde la app.");
+        // --- Create history bookings for user1 (past attended classes) ---
+        createHistoryBookings(user1);
+        log.info("-> Reservas históricas creadas para el usuario de prueba.");
+
+        // --- Create News ---
+        createNews();
+        log.info("-> Noticias creadas.");
 
         log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
     }
@@ -119,4 +132,94 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
     }
+
+    private void createHistoryBookings(User user) {
+        LocalDate today = LocalDate.now();
+        List<ScheduledClass> allClasses = scheduledClassRepository.findAll();
+        
+        // Filter classes from the past (within last 30 days)
+        List<ScheduledClass> pastClasses = allClasses.stream()
+            .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
+            .filter(sc -> sc.getDateTime().isAfter(today.minusDays(30).atStartOfDay()))
+            .toList();
+        
+        if (pastClasses.isEmpty()) {
+            log.warn("No hay clases pasadas disponibles para crear historial");
+            return;
+        }
+        
+        // Shuffle the list to get random classes
+        List<ScheduledClass> shuffledClasses = new ArrayList<>(pastClasses);
+        Collections.shuffle(shuffledClasses);
+        
+        // Create exactly 2 history bookings: one ATTENDED and one ABSENT
+        if (shuffledClasses.size() >= 2) {
+            // First booking: ATTENDED (present)
+            ScheduledClass class1 = shuffledClasses.get(0);
+            int daysBeforeClass1 = 3 + new Random().nextInt(7);
+            createHistoryBooking(user, class1, daysBeforeClass1, BookingStatus.ATTENDED);
+            
+            // Second booking: ABSENT (ausente)
+            ScheduledClass class2 = shuffledClasses.get(1);
+            int daysBeforeClass2 = 3 + new Random().nextInt(7);
+            createHistoryBooking(user, class2, daysBeforeClass2, BookingStatus.ABSENT);
+            
+            log.info("Creadas 2 reservas históricas para usuario {}: 1 ATTENDED, 1 ABSENT", user.getEmail());
+        } else {
+            log.warn("No hay suficientes clases pasadas para crear historial completo");
+        }
+    }
+
+    private void createHistoryBooking(User user, ScheduledClass scheduledClass, int daysBeforeClass, BookingStatus status) {
+        UserBooking booking = new UserBooking();
+        booking.setUserId(user.getId());
+        booking.setScheduledClassId(scheduledClass.getId());
+        booking.setClassName(scheduledClass.getName());
+        booking.setClassDateTime(scheduledClass.getDateTime());
+        booking.setLocation(scheduledClass.getLocation());
+        booking.setDurationMinutes(scheduledClass.getDurationMinutes());
+        booking.setStatus(status);
+        booking.setCreationDate(scheduledClass.getDateTime().minusDays(daysBeforeClass));
+        bookingRepository.save(booking);
+    }
+
+    private void createNews() {
+        List<News> newsList = new ArrayList<>();
+
+        News news1 = new News();
+        news1.setTitle("Nueva Sede en Recoleta");
+        news1.setContent("¡Estamos emocionados de anunciar la apertura de nuestra nueva sede en Recoleta! Con equipamiento de última generación y un equipo de profesionales altamente capacitados.");
+        news1.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/gym-opening_hlcacn.jpg");
+        news1.setPublishedDate(LocalDateTime.now().minusDays(2));
+        news1.setCreatedAt(LocalDateTime.now().minusDays(2));
+
+        News news2 = new News();
+        news2.setTitle("Horarios Especiales - Feriados");
+        news2.setContent("Durante los próximos feriados, el gimnasio tendrá horarios especiales. Consulta en recepción o en nuestra app los nuevos horarios disponibles.");
+        news2.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/schedule_change_pcqgam.jpg");
+        news2.setPublishedDate(LocalDateTime.now().minusDays(5));
+        news2.setCreatedAt(LocalDateTime.now().minusDays(5));
+
+        News news3 = new News();
+        news3.setTitle("Desafío RitmoFit 30 Días");
+        news3.setContent("¡Únete al Desafío RitmoFit de 30 días! Participa asistiendo a 20 clases en un mes y obtén un mes gratis. Inscripciones abiertas hasta fin de mes.");
+        news3.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/challenge_30_days_bmfplr.jpg");
+        news3.setPublishedDate(LocalDateTime.now().minusDays(8));
+        news3.setCreatedAt(LocalDateTime.now().minusDays(8));
+
+        News news4 = new News();
+        news4.setTitle("Nuevas Clases de Yoga Aéreo");
+        news4.setContent("A partir de la próxima semana incorporamos clases de Yoga Aéreo. Una experiencia única que combina flexibilidad, fuerza y diversión. Cupos limitados.");
+        news4.setImageUrl("https://res.cloudinary.com/dkzmrfgus/image/upload/v1734143857/ritmofit/news/aerial_yoga_u3r0wr.jpg");
+        news4.setPublishedDate(LocalDateTime.now().minusDays(12));
+        news4.setCreatedAt(LocalDateTime.now().minusDays(12));
+
+        newsList.add(news1);
+        newsList.add(news2);
+        newsList.add(news3);
+        newsList.add(news4);
+
+        newsRepository.saveAll(newsList);
+    }
 }
+

@@ -30,6 +30,9 @@ public class SecurityConfig {
                         // Permitimos el acceso público al calendario de clases
                         .requestMatchers("/api/v1/schedule/**").permitAll()
 
+                        // Permitir acceso a /error (Spring Boot error page)
+                        .requestMatchers("/error").permitAll()
+
                         // Cualquier otra petición que no coincida con las reglas anteriores, requerirá autenticación.
                         .anyRequest().authenticated()
                 )
