@@ -1,5 +1,6 @@
 package com.uade.ritmofitapi.service;
 
+import com.uade.ritmofitapi.exception.InvalidCredentialsException;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -50,16 +51,16 @@ public class AuthService {
 
     public String login(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario o contraseña inválidos."));
+                .orElseThrow(() -> new InvalidCredentialsException("Usuario o contraseña inválidos."));
 
         // Verificar que el email esté verificado
         if (!user.isVerified()) {
-            throw new RuntimeException("Por favor, verifica tu email antes de iniciar sesión.");
+            throw new InvalidCredentialsException("Por favor, verifica tu email antes de iniciar sesión.");
         }
 
         // Comparamos la contraseña enviada con el hash almacenado
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Usuario o contraseña inválidos.");
+            throw new InvalidCredentialsException("Usuario o contraseña inválidos.");
         }
 
         user.setLastLogin(java.time.LocalDateTime.now());
