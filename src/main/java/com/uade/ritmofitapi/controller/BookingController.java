@@ -34,6 +34,13 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<List<UserBookingDto>> getUserBookingHistory(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        List<UserBookingDto> bookings = bookingService.getHistoryByUserId(user.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(Authentication authentication, @PathVariable String bookingId) {
         User user = (User) authentication.getPrincipal();
