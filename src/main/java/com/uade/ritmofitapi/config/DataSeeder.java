@@ -64,7 +64,7 @@ public class DataSeeder implements CommandLineRunner {
         // --- Create Users ---
         User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
         user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
-        User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 35, "Masculino");
+        User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 29, "Masculino");
         User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
         User user4 = new User("Antonio", "antonio@uade.edu.ar", "1234", 24, "Masculino");
 
