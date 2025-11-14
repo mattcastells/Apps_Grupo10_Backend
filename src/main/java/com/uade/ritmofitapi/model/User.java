@@ -17,6 +17,7 @@ import java.util.Collections;
 public class User implements UserDetails {
     @Id
     private String id;
+    @Indexed(unique = true)
     private String email;
     private String password;
     private String name;
@@ -26,6 +27,15 @@ public class User implements UserDetails {
     private boolean isVerified = false;
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime lastLogin;
+
+    // Campos para verificación de email
+    private String otp;
+    private LocalDateTime otpExpires;
+
+    // Campos para reseteo de contraseña
+    private String passwordResetOtp;
+    private LocalDateTime passwordResetOtpExpires;
+
 
     public User(String name, String email, String password, Integer age, String gender) {
         this.name = name;
