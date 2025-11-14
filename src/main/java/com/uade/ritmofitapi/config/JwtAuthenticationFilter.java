@@ -1,0 +1,89 @@
+package com.uade.ritmofitapi.config;
+
+import com.uade.ritmofitapi.service.JwtService;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collections;
+
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // No aplicar JWT filter en endpoints públicos
+        return path.startsWith("/api/v1/auth/") ||
+               path.startsWith("/api/v1/schedule/") ||
+               path.startsWith("/api/v1/locations/");
+    }
+
+    @Override
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+
+        final String authHeader = request.getHeader("Authorization");
+
+        // Si no hay header Authorization o no empieza con "Bearer ", continuar sin autenticar
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            // Extraer el token (quitando "Bearer ")
+            final String jwt = authHeader.substring(7);
+
+            // Validar el token
+            if (jwtService.validateToken(jwt)) {
+                // Extraer el userId del token
+                String userId = jwtService.getUserIdFromToken(jwt);
+
+                // Crear la autenticación con el userId como principal
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userId,  // principal (será retornado por auth.getName())
+                        null,    // credentials (no necesarias después de autenticar)
+                        Collections.emptyList()  // authorities (roles/permisos - vacío por ahora)
+                );
+
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Setear la autenticación en el contexto de Spring Security
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+
+            filterChain.doFilter(request, response);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // TOKEN INVÁLIDO O EXPIRADO: Devolver 401 Unauthorized (NO 403)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(
+                "{\"timestamp\":\"" + Instant.now() + "\"," +
+                "\"status\":401," +
+                "\"error\":\"Unauthorized\"," +
+                "\"message\":\"Token inválido o expirado. Por favor, inicia sesión nuevamente.\"}"
+            );
+            // No continuar con el filterChain
+        }
+    }
+}

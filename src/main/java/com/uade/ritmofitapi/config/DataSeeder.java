@@ -55,43 +55,73 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        // Clean slate
+        // ===== LIMPIEZA COMPLETA DE LA BASE DE DATOS =====
+        // Esto asegura que en cada arranque partimos de cero
+        // Evita problemas con hashes BCrypt de ejecuciones anteriores
+        log.info("🗑️ Limpiando base de datos...");
         bookingRepository.deleteAll();
         scheduledClassRepository.deleteAll();
         classTemplateRepository.deleteAll();
         userRepository.deleteAll();
         locationRepository.deleteAll();
         newsRepository.deleteAll();
+        log.info("✅ Base de datos limpiada completamente.");
 
         // --- Create Locations ---
+        log.info("📍 Creando sedes...");
         Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
         Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
         Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
         locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
-        log.info("-> Sedes creadas.");
+        log.info("✅ 3 sedes creadas.");
 
         // --- Create Users ---
-        User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
+        log.info("👥 Creando usuarios mock...");
+        User user1 = new User("Matias", "matias@uade.edu.ar", "12345678", 25, "Masculino");
         user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
-        User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 29, "Masculino");
-        User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
-        User user4 = new User("Antonio", "antonio@uade.edu.ar", "1234", 24, "Masculino");
+        User user2 = new User("Franco", "franco@uade.edu.ar", "12345678", 35, "Masculino");
+        User user3 = new User("Horacio", "horacio@uade.edu.ar", "12345678", 37, "Masculino");
+        User user4 = new User("Antonio", "antonio@uade.edu.ar", "12345678", 24, "Masculino");
 
         List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4));
+
+        // Hashear passwords y marcar como verificados
         for (User user : users) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            String plainPassword = user.getPassword();
+            String hashedPassword = passwordEncoder.encode(plainPassword);
+            user.setPassword(hashedPassword);
             user.setVerified(true);
+            log.info("🔐 Creating user: {} | Plain password: {} | Hash starts with: {}",
+                     user.getEmail(), plainPassword, hashedPassword.substring(0, 20) + "...");
         }
+
         userRepository.saveAll(users);
-        log.info("-> Usuarios mock creados.");
+        log.info("💾 {} usuarios guardados en BD.", users.size());
+
+        // VERIFICACIÓN CRÍTICA: Comprobar que los usuarios se guardaron correctamente
+        log.info("🔍 VERIFICACIÓN DE PASSWORDS:");
+        for (User user : users) {
+            User saved = userRepository.findByEmail(user.getEmail()).orElseThrow();
+            boolean testMatch = passwordEncoder.matches("12345678", saved.getPassword());
+
+            if (testMatch) {
+                log.info("✅ {} - Password test: PASS ✅", user.getEmail());
+            } else {
+                log.error("❌ {} - Password test: FAIL ❌", user.getEmail());
+                log.error("   Hash en BD: {}", saved.getPassword());
+                log.error("   ESTO ES UN ERROR CRÍTICO - EL LOGIN NO FUNCIONARÁ");
+            }
+        }
 
         // --- Create Class Templates ---
+        log.info("📋 Creando plantillas de clases...");
         createClassTemplates(sedeBelgrano, sedePalermo, sedeCaballito);
-        log.info("-> Plantillas de clases creadas.");
+        log.info("✅ Plantillas de clases creadas.");
 
         // --- Generate Scheduled Classes for the last 4 weeks and next 4 weeks ---
+        log.info("📅 Generando clases agendadas (4 semanas pasadas + 4 futuras)...");
         generateScheduledClasses();
-        log.info("-> Clases agendadas generadas.");
+        log.info("✅ Clases agendadas generadas.");
 
         // --- Create history bookings for user1 (past attended classes) ---
         createHistoryBookings(user1);
@@ -101,7 +131,12 @@ public class DataSeeder implements CommandLineRunner {
         createNews();
         log.info("-> Noticias creadas.");
 
-        log.info("----- DATOS MOCK CARGADOS CORRECTAMENTE -----");
+        log.info("🎉 ===== DATOS MOCK CARGADOS CORRECTAMENTE =====");
+        log.info("📧 Usuarios disponibles para login (password: 12345678):");
+        log.info("   - matias@uade.edu.ar");
+        log.info("   - franco@uade.edu.ar");
+        log.info("   - horacio@uade.edu.ar");
+        log.info("   - antonio@uade.edu.ar");
     }
 
     private void createClassTemplates(Location sedeBelgrano, Location sedePalermo, Location sedeCaballito) {

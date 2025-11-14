@@ -13,6 +13,8 @@ public class ScheduledClass {
     @Id
     private String id;
     private String templateId;
+    private String locationId;  // Denormalización para facilitar filtrado
+    private String discipline;  // Denormalización para facilitar filtrado
     private LocalDateTime dateTime;
     private Integer capacity;
     private String name;
@@ -25,6 +27,8 @@ public class ScheduledClass {
 
     public ScheduledClass(ClassTemplate template, LocalDateTime dateTime) {
         this.templateId = template.getId();
+        this.locationId = template.getLocation() != null ? template.getLocation().getId() : null;
+        this.discipline = template.getDiscipline();
         this.name = template.getName();
         this.professor = template.getProfessor();
         this.durationMinutes = template.getDurationMinutes();

@@ -30,8 +30,16 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUser(@PathVariable String id) {
+    public ResponseEntity<?> getUser(Authentication authentication, @PathVariable String id) {
         try {
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda ver su propio perfil
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para ver este perfil");
+            }
+
             UserResponse resp = userService.getById(id);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException ex) {
@@ -41,10 +49,18 @@ public class UserController {
 
     // PUT /users/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserRequest req) {
+    public ResponseEntity<?> updateUser(Authentication authentication, @PathVariable String id, @RequestBody UserRequest req) {
         try {
-            userService.updateById(id, req);
-            return ResponseEntity.ok().build();
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda actualizar su propio perfil
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para actualizar este perfil");
+            }
+
+            UserResponse updatedUser = userService.updateById(id, req);
+            return ResponseEntity.ok(updatedUser);
         } catch (DuplicateKeyException dup) {
             return ResponseEntity.status(409).body("Email ya en uso");
         } catch (IllegalArgumentException bad) {
@@ -54,11 +70,19 @@ public class UserController {
         }
     }
 
-    @PutMapping("/my-photo")
-    public ResponseEntity<?> updatePhoto(Authentication authentication, @RequestBody UpdatePhotoRequest req) {
-        User user = (User) authentication.getPrincipal();
+    // PUT /users/{id}/photo
+    @PutMapping("/{id}/photo")
+    public ResponseEntity<?> updatePhoto(Authentication authentication, @PathVariable String id, @RequestBody UpdatePhotoRequest req) {
         try {
-            userService.updatePhoto(user.getId(), req);
+            // Obtener el userId del usuario autenticado
+            String authenticatedUserId = (String) authentication.getPrincipal();
+
+            // Validar que el usuario solo pueda actualizar su propia foto
+            if (!authenticatedUserId.equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permiso para actualizar esta foto");
+            }
+
+            userService.updatePhoto(id, req);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException bad) {
             return ResponseEntity.badRequest().body(bad.getMessage());

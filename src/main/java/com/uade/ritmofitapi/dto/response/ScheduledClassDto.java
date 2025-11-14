@@ -18,4 +18,5 @@ public class ScheduledClassDto {
     private LocalDateTime dateTime;
     private Integer durationMinutes;
     private Integer availableSlots;
+    private String location; // Nombre de la sede
 }

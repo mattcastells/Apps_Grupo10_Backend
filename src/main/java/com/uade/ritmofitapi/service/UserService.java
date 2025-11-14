@@ -8,15 +8,20 @@ import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository) { this.userRepository = userRepository; }
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     // Mantengo el create original por compatibilidad con otros flujos existentes
     public User createUser(UserCreationRequest request) {
@@ -42,7 +47,7 @@ public class UserService {
     }
 
     // --- Perfil: actualizar por id (usa shape de UserRequest del front) ---
-    public void updateById(String userId, UserRequest req) {
+    public UserResponse updateById(String userId, UserRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -58,10 +63,16 @@ public class UserService {
         if (req.getGender() != null)      user.setGender(req.getGender());
         if (req.getProfilePicture() != null) user.setProfilePicture(req.getProfilePicture());
         if (req.getPassword() != null && !req.getPassword().isBlank()) {
-            user.setPassword(req.getPassword()); // (pendiente: hashear en futuro)
+            // Validar longitud mínima de contraseña
+            if (req.getPassword().length() < 4) {
+                throw new IllegalArgumentException("La contraseña debe tener al menos 4 caracteres.");
+            }
+            // Hashear la contraseña antes de guardarla (SEGURIDAD)
+            user.setPassword(passwordEncoder.encode(req.getPassword()));
         }
 
-        userRepository.save(user);
+        User updatedUser = userRepository.save(user);
+        return toResponse(updatedUser);
     }
 
     // --- Perfil: actualizar foto (body: { "photoUrl": "..." }) ---

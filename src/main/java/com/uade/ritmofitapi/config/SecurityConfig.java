@@ -1,6 +1,6 @@
 package com.uade.ritmofitapi.config;
 
-import com.uade.ritmofitapi.config.filter.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +30,9 @@ public class SecurityConfig {
                         // Permitimos el acceso público al calendario de clases
                         .requestMatchers("/api/v1/schedule/**").permitAll()
 
+                        // Permitimos el acceso público a las ubicaciones/sedes
+                        .requestMatchers("/api/v1/locations/**").permitAll()
+
                         // Permitir acceso a /error (Spring Boot error page)
                         .requestMatchers("/error").permitAll()
 
@@ -38,6 +41,32 @@ public class SecurityConfig {
                 )
                 // Le indicamos a Spring que no cree sesiones, ya que usaremos un enfoque "stateless" con tokens.
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        // Token faltante o inválido: devolver 401
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write(
+                                    "{\"timestamp\":\"" + java.time.Instant.now() + "\"," +
+                                            "\"status\":401," +
+                                            "\"error\":\"Unauthorized\"," +
+                                            "\"message\":\"Autenticación requerida. Por favor, inicia sesión.\"}"
+                            );
+                        })
+                        // Autenticado pero sin permisos: devolver 403
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write(
+                                    "{\"timestamp\":\"" + java.time.Instant.now() + "\"," +
+                                            "\"status\":403," +
+                                            "\"error\":\"Forbidden\"," +
+                                            "\"message\":\"No tenés permisos para acceder a este recurso.\"}"
+                            );
+                        })
+                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

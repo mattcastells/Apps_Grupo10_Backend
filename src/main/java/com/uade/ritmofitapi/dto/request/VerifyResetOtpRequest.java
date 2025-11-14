@@ -9,8 +9,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ForgotPasswordRequest {
+public class VerifyResetOtpRequest {
     @NotBlank(message = "El email no puede estar vacío")
     @Email(message = "Debe ser una dirección de email válida")
     private String email;
+
+    @NotBlank(message = "El OTP no puede estar vacío")
+    private String otp;
 }

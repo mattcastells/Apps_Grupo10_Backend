@@ -19,6 +19,12 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**") // Aplica esta regla a todos los endpoints bajo /api/
             
             // Orígenes permitidos (la clave está aquí):
+
+            .allowedOriginPatterns(
+                    "http://localhost:*",              // Cualquier puerto en localhost
+                    "https://*.tunnel.expo.dev"        // Cualquier subdominio de Expo
+            )
+
             .allowedOrigins(
                 "http://localhost:8081", // Origen de Expo Web en desarrollo
                 "https://*.tunnel.expo.dev" // Origen si usa el túnel de Expo

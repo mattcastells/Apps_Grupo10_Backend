@@ -27,8 +27,8 @@ public class HistoryController {
             Authentication authentication,
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to) {
-        User user = (User) authentication.getPrincipal();
-        String userId = user.getId();
+        // Fix: authentication.getPrincipal() devuelve el userId (String), no el objeto User
+        String userId = (String) authentication.getPrincipal();
 
         String fromDate = from;
         String toDate = to;
