@@ -14,4 +14,5 @@ public class UserBookingDto {
     private LocalDateTime classDateTime;
     private String professor;
     private String status;
+    private String location; // Agregado para mostrar la sede en la UI
 }

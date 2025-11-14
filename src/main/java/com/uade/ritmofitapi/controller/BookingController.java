@@ -40,6 +40,13 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @GetMapping("/booked-class-ids")
+    public ResponseEntity<List<String>> getBookedClassIds(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
+        List<String> bookedClassIds = bookingService.getBookedClassIds(userId);
+        return ResponseEntity.ok(bookedClassIds);
+    }
+
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(Authentication authentication, @PathVariable String bookingId) {
         String userId = (String) authentication.getPrincipal();

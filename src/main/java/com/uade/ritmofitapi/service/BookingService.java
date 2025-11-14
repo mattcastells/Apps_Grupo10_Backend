@@ -25,15 +25,18 @@ public class BookingService {
     private final ScheduledClassRepository scheduledClassRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final com.uade.ritmofitapi.repository.LocationRepository locationRepository;
 
     public BookingService(BookingRepository bookingRepository,
                           ScheduledClassRepository scheduledClassRepository,
                           UserRepository userRepository,
-                          EmailService emailService) {
+                          EmailService emailService,
+                          com.uade.ritmofitapi.repository.LocationRepository locationRepository) {
         this.bookingRepository = bookingRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.locationRepository = locationRepository;
     }
 
     @Transactional
@@ -48,18 +51,18 @@ public class BookingService {
 
         // VALIDACIÓN 1: No permitir reservar clases del pasado
         if (scheduledClass.getDateTime().isBefore(now)) {
-            throw new RuntimeException("No se puede reservar una clase que ya pasó.");
+            throw new IllegalArgumentException("No se puede reservar una clase que ya pasó.");
         }
 
         // VALIDACIÓN 2: Mínimo 1 hora de anticipación
         LocalDateTime minimumBookingTime = now.plusHours(1);
         if (scheduledClass.getDateTime().isBefore(minimumBookingTime)) {
-            throw new RuntimeException("Debes reservar con al menos 1 hora de anticipación.");
+            throw new IllegalArgumentException("Debes reservar con al menos 1 hora de anticipación.");
         }
 
         // VALIDACIÓN 3: Verificar capacidad
         if (scheduledClass.getEnrolledCount() >= scheduledClass.getCapacity()) {
-            throw new RuntimeException("No hay cupos disponibles para esta clase.");
+            throw new IllegalStateException("No hay cupos disponibles para esta clase.");
         }
 
         // VALIDACIÓN 4: Solo bloquear si ya tiene una reserva CONFIRMADA
@@ -140,6 +143,25 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtener IDs de clases ya reservadas por el usuario (solo confirmadas y futuras)
+     * Para que el frontend pueda filtrar/marcar las clases en el catálogo
+     */
+    public List<String> getBookedClassIds(String userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+        }
+
+        List<UserBooking> bookings = bookingRepository.findAllByUserId(userId);
+        LocalDateTime now = LocalDateTime.now();
+
+        return bookings.stream()
+                .filter(booking -> booking.getStatus() == BookingStatus.CONFIRMED)
+                .filter(booking -> booking.getClassDateTime().isAfter(now))
+                .map(UserBooking::getScheduledClassId)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void cancel(String bookingId, String userId) {
         UserBooking booking = bookingRepository.findById(bookingId)
@@ -176,17 +198,30 @@ public class BookingService {
     }
 
     private UserBookingDto mapToUserBookingDto(UserBooking booking) {
-        // Obtener el profesor desde la clase agendada
-        String professor = scheduledClassRepository.findById(booking.getScheduledClassId())
-                .map(ScheduledClass::getProfessor)
-                .orElse("Profesor no disponible");
-        
+        // Obtener datos completos desde la clase agendada
+        ScheduledClass scheduledClass = scheduledClassRepository.findById(booking.getScheduledClassId())
+                .orElse(null);
+
+        String professor = "Profesor no disponible";
+        String location = "Sede no disponible";
+
+        if (scheduledClass != null) {
+            professor = scheduledClass.getProfessor();
+            // Obtener la ubicación desde la clase programada
+            if (scheduledClass.getLocationId() != null) {
+                location = locationRepository.findById(scheduledClass.getLocationId())
+                        .map(loc -> loc.getName())
+                        .orElse("Sede no disponible");
+            }
+        }
+
         return new UserBookingDto(
                 booking.getId(),
                 booking.getClassName(),
                 booking.getClassDateTime(),
                 professor,
-                booking.getStatus().toString()
+                booking.getStatus().toString(),
+                location
         );
     }
 
