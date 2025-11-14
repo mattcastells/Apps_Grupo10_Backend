@@ -52,97 +52,84 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        // IMPORTANTE: Solo limpiar si realmente queremos resetear TODO
-        // Para desarrollo, comentar esto y usar la lógica idempotente de abajo
-        // bookingRepository.deleteAll();
-        // scheduledClassRepository.deleteAll();
-        // classTemplateRepository.deleteAll();
-        // userRepository.deleteAll();
-        // locationRepository.deleteAll();
+        // ===== LIMPIEZA COMPLETA DE LA BASE DE DATOS =====
+        // Esto asegura que en cada arranque partimos de cero
+        // Evita problemas con hashes BCrypt de ejecuciones anteriores
+        log.info("🗑️ Limpiando base de datos...");
+        bookingRepository.deleteAll();
+        scheduledClassRepository.deleteAll();
+        classTemplateRepository.deleteAll();
+        userRepository.deleteAll();
+        locationRepository.deleteAll();
+        log.info("✅ Base de datos limpiada completamente.");
 
-        // --- Create Locations (solo si no existen) ---
-        if (locationRepository.count() == 0) {
-            Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
-            Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
-            Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
-            locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
-            log.info("-> Sedes creadas.");
-        } else {
-            log.info("-> Sedes ya existen, saltando creación.");
+        // --- Create Locations ---
+        log.info("📍 Creando sedes...");
+        Location sedeBelgrano = new Location("Sede Belgrano", "Av. Cabildo 1234");
+        Location sedePalermo = new Location("Sede Palermo", "Av. Santa Fe 5678");
+        Location sedeCaballito = new Location("Sede Caballito", "Av. Rivadavia 4900");
+        locationRepository.saveAll(List.of(sedeBelgrano, sedePalermo, sedeCaballito));
+        log.info("✅ 3 sedes creadas.");
+
+        // --- Create Users ---
+        log.info("👥 Creando usuarios mock...");
+        User user1 = new User("Matias", "matias@uade.edu.ar", "12345678", 25, "Masculino");
+        user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
+        User user2 = new User("Franco", "franco@uade.edu.ar", "12345678", 35, "Masculino");
+        User user3 = new User("Horacio", "horacio@uade.edu.ar", "12345678", 37, "Masculino");
+        User user4 = new User("Antonio", "antonio@uade.edu.ar", "12345678", 24, "Masculino");
+
+        List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4));
+
+        // Hashear passwords y marcar como verificados
+        for (User user : users) {
+            String plainPassword = user.getPassword();
+            String hashedPassword = passwordEncoder.encode(plainPassword);
+            user.setPassword(hashedPassword);
+            user.setVerified(true);
+            log.info("🔐 Creating user: {} | Plain password: {} | Hash starts with: {}",
+                     user.getEmail(), plainPassword, hashedPassword.substring(0, 20) + "...");
         }
 
-        // --- Create Users (solo si no existen) ---
-        List<User> users;
-        if (userRepository.count() == 0) {
-            log.info("-> Creando usuarios mock...");
-            User user1 = new User("Matias", "matias@uade.edu.ar", "12345678", 25, "Masculino");
-            user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
-            User user2 = new User("Franco", "franco@uade.edu.ar", "12345678", 35, "Masculino");
-            User user3 = new User("Horacio", "horacio@uade.edu.ar", "12345678", 37, "Masculino");
-            User user4 = new User("Antonio", "antonio@uade.edu.ar", "12345678", 24, "Masculino");
+        userRepository.saveAll(users);
+        log.info("💾 {} usuarios guardados en BD.", users.size());
 
-            users = new ArrayList<>(List.of(user1, user2, user3, user4));
-            for (User user : users) {
-                String plainPassword = user.getPassword(); // Guardar antes de hashear
-                String hashedPassword = passwordEncoder.encode(plainPassword);
-                user.setPassword(hashedPassword);
-                user.setVerified(true);
+        // VERIFICACIÓN CRÍTICA: Comprobar que los usuarios se guardaron correctamente
+        log.info("🔍 VERIFICACIÓN DE PASSWORDS:");
+        for (User user : users) {
+            User saved = userRepository.findByEmail(user.getEmail()).orElseThrow();
+            boolean testMatch = passwordEncoder.matches("12345678", saved.getPassword());
 
-                // LOG PARA VERIFICAR
-                log.info("🔐 Creating user: {} with hashed password", user.getEmail());
-            }
-            userRepository.saveAll(users);
-
-            // VERIFICACIÓN POST-CREACIÓN
-            for (User user : users) {
-                User saved = userRepository.findByEmail(user.getEmail()).orElseThrow();
-                boolean testMatch = passwordEncoder.matches("12345678", saved.getPassword());
-                log.info("✅ User {} - Password test: {}", user.getEmail(), testMatch ? "PASS" : "FAIL ❌");
-            }
-
-            log.info("-> Usuarios mock creados y verificados.");
-        } else {
-            log.info("-> Usuarios ya existen, saltando creación.");
-            users = userRepository.findAll();
-
-            // VERIFICAR usuarios existentes
-            User testUser = userRepository.findByEmail("horacio@uade.edu.ar").orElse(null);
-            if (testUser != null) {
-                boolean testMatch = passwordEncoder.matches("12345678", testUser.getPassword());
-                log.info("🔍 Existing user horacio@uade.edu.ar - Password test: {}", testMatch ? "PASS ✅" : "FAIL ❌");
-            }
-        }
-
-        // --- Create Class Templates (solo si no existen) ---
-        if (classTemplateRepository.count() == 0) {
-            List<Location> locations = locationRepository.findAll();
-            if (locations.size() >= 3) {
-                createClassTemplates(locations.get(0), locations.get(1), locations.get(2));
-                log.info("-> Plantillas de clases creadas.");
+            if (testMatch) {
+                log.info("✅ {} - Password test: PASS ✅", user.getEmail());
             } else {
-                log.warn("-> No hay suficientes sedes para crear plantillas de clases.");
+                log.error("❌ {} - Password test: FAIL ❌", user.getEmail());
+                log.error("   Hash en BD: {}", saved.getPassword());
+                log.error("   ESTO ES UN ERROR CRÍTICO - EL LOGIN NO FUNCIONARÁ");
             }
-        } else {
-            log.info("-> Plantillas de clases ya existen, saltando creación.");
         }
 
-        // --- Generate Scheduled Classes for the last 4 weeks and next 4 weeks (solo si no existen) ---
-        if (scheduledClassRepository.count() == 0) {
-            generateScheduledClasses();
-            log.info("-> Clases agendadas generadas.");
-        } else {
-            log.info("-> Clases agendadas ya existen, saltando generación.");
-        }
+        // --- Create Class Templates ---
+        log.info("📋 Creando plantillas de clases...");
+        createClassTemplates(sedeBelgrano, sedePalermo, sedeCaballito);
+        log.info("✅ Plantillas de clases creadas.");
 
-        // --- Create User Bookings (Past and Future) (solo si no existen) ---
-        if (bookingRepository.count() == 0) {
-            createRealisticUserBookings(users);
-            log.info("-> Reservas de usuarios (pasadas y futuras) creadas.");
-        } else {
-            log.info("-> Reservas ya existen, saltando creación.");
-        }
+        // --- Generate Scheduled Classes for the last 4 weeks and next 4 weeks ---
+        log.info("📅 Generando clases agendadas (4 semanas pasadas + 4 futuras)...");
+        generateScheduledClasses();
+        log.info("✅ Clases agendadas generadas.");
 
-        log.info("----- DATOS MOCK VERIFICADOS/CARGADOS CORRECTAMENTE -----");
+        // --- Create User Bookings (Past and Future) ---
+        log.info("🎫 Creando reservas de usuarios...");
+        createRealisticUserBookings(users);
+        log.info("✅ Reservas creadas.");
+
+        log.info("🎉 ===== DATOS MOCK CARGADOS CORRECTAMENTE =====");
+        log.info("📧 Usuarios disponibles para login (password: 12345678):");
+        log.info("   - matias@uade.edu.ar");
+        log.info("   - franco@uade.edu.ar");
+        log.info("   - horacio@uade.edu.ar");
+        log.info("   - antonio@uade.edu.ar");
     }
 
     private void createClassTemplates(Location sedeBelgrano, Location sedePalermo, Location sedeCaballito) {
