@@ -25,7 +25,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmailService {
 
-    private static final String ELASTIC_EMAIL_API_URL = "https://api.elasticemail.com/v2/email/send";
+    // API v4 endpoint (nuevo)
+    private static final String ELASTIC_EMAIL_API_URL = "https://api.elasticemail.com/v4/emails";
 
     @Value("${elastic.email.api-key}")
     private String apiKey;
@@ -56,20 +57,37 @@ public class EmailService {
                 throw new RuntimeException("Configuración de email no válida. Por favor configura ELASTIC_EMAIL_API_KEY en .env");
             }
 
-            // Construir URL con parámetros
-            String url = buildElasticEmailUrl(to, subject, body);
+            // Construir request body para API v4 (JSON)
+            Map<String, Object> emailRequest = new HashMap<>();
 
-            // Configurar headers
+            // Recipients
+            Map<String, String> recipient = new HashMap<>();
+            recipient.put("Email", to);
+            emailRequest.put("Recipients", new Map[]{recipient});
+
+            // Content
+            Map<String, Object> content = new HashMap<>();
+            content.put("Body", new Map[]{
+                Map.of("ContentType", "PlainText", "Content", body)
+            });
+            content.put("From", fromEmail);
+            content.put("Subject", subject);
+            emailRequest.put("Content", content);
+
+            // Configurar headers para API v4
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("X-ElasticEmail-ApiKey", apiKey);
 
-            HttpEntity<String> request = new HttpEntity<>(headers);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailRequest, headers);
 
             // Enviar request POST
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            log.debug("Enviando email a Elastic Email API v4: {}", ELASTIC_EMAIL_API_URL);
+            ResponseEntity<String> response = restTemplate.postForEntity(ELASTIC_EMAIL_API_URL, request, String.class);
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("Email enviado exitosamente a {} a través de Elastic Email", to);
+            if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.CREATED) {
+                log.info("✅ Email enviado exitosamente a {} a través de Elastic Email v4", to);
+                log.debug("Response: {}", response.getBody());
             } else {
                 log.error("Error al enviar email. Status code: {}, Response: {}",
                     response.getStatusCode(), response.getBody());
@@ -77,108 +95,9 @@ public class EmailService {
             }
 
         } catch (Exception e) {
-            log.error("Error al enviar el email a {}: {}", to, e.getMessage(), e);
+            log.error("❌ Error al enviar el email a {}: {}", to, e.getMessage(), e);
             throw new RuntimeException("No se pudo enviar el email: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Construye la URL con todos los parámetros para Elastic Email API v2.
-     * Usamos URL encoding para manejar caracteres especiales correctamente.
-     */
-    private String buildElasticEmailUrl(String to, String subject, String body) {
-        Map<String, String> params = new HashMap<>();
-        params.put("apikey", apiKey);
-        params.put("from", fromEmail);
-        params.put("fromName", fromName);
-        params.put("to", to);
-        params.put("subject", subject);
-        params.put("bodyText", body);
-        params.put("isTransactional", "true");
-
-        StringBuilder urlBuilder = new StringBuilder(ELASTIC_EMAIL_API_URL);
-        urlBuilder.append("?");
-
-        params.forEach((key, value) -> {
-            urlBuilder.append(key)
-                     .append("=")
-                     .append(urlEncode(value))
-                     .append("&");
-        });
-
-        // Remover el último &
-        String url = urlBuilder.toString();
-        return url.substring(0, url.length() - 1);
-    }
-
-    /**
-     * URL encode simple para los parámetros.
-     */
-    private String urlEncode(String value) {
-        try {
-            return java.net.URLEncoder.encode(value, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            log.error("Error al encodear URL: {}", e.getMessage());
-            return value;
-        }
-    }
-
-    /**
-     * Envía un email HTML usando Elastic Email API.
-     *
-     * @param to Email del destinatario
-     * @param subject Asunto del email
-     * @param htmlBody Contenido del email en formato HTML
-     * @throws RuntimeException Si falla el envío del email
-     */
-    public void sendHtmlEmail(String to, String subject, String htmlBody) {
-        try {
-            log.info("Preparando envío de email HTML a {} con asunto: {}", to, subject);
-
-            if (apiKey == null || apiKey.isEmpty() || apiKey.equals("tu_api_key_de_elastic_email_aqui")) {
-                log.error("ELASTIC_EMAIL_API_KEY no está configurada correctamente");
-                throw new RuntimeException("Configuración de email no válida");
-            }
-
-            Map<String, String> params = new HashMap<>();
-            params.put("apikey", apiKey);
-            params.put("from", fromEmail);
-            params.put("fromName", fromName);
-            params.put("to", to);
-            params.put("subject", subject);
-            params.put("bodyHtml", htmlBody);
-            params.put("isTransactional", "true");
-
-            StringBuilder urlBuilder = new StringBuilder(ELASTIC_EMAIL_API_URL);
-            urlBuilder.append("?");
-
-            params.forEach((key, value) -> {
-                urlBuilder.append(key)
-                         .append("=")
-                         .append(urlEncode(value))
-                         .append("&");
-            });
-
-            String url = urlBuilder.toString();
-            url = url.substring(0, url.length() - 1);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            HttpEntity<String> request = new HttpEntity<>(headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-
-            if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("Email HTML enviado exitosamente a {} a través de Elastic Email", to);
-            } else {
-                log.error("Error al enviar email HTML. Status code: {}, Response: {}",
-                    response.getStatusCode(), response.getBody());
-                throw new RuntimeException("Error al enviar email HTML: " + response.getBody());
-            }
-
-        } catch (Exception e) {
-            log.error("Error al enviar el email HTML a {}: {}", to, e.getMessage(), e);
-            throw new RuntimeException("No se pudo enviar el email HTML: " + e.getMessage(), e);
-        }
-    }
 }
