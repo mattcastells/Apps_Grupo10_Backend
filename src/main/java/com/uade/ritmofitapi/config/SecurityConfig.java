@@ -30,6 +30,9 @@ public class SecurityConfig {
                         // Permitimos el acceso público al calendario de clases
                         .requestMatchers("/api/v1/schedule/**").permitAll()
 
+                        // Permitimos el acceso público a las ubicaciones/sedes
+                        .requestMatchers("/api/v1/locations/**").permitAll()
+
                         // Cualquier otra petición que no coincida con las reglas anteriores, requerirá autenticación.
                         .anyRequest().authenticated()
                 )
