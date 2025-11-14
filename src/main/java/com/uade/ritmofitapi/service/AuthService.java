@@ -42,15 +42,14 @@ public class AuthService {
         // Hasheamos la contraseña antes de guardarla
         String hashedPassword = passwordEncoder.encode(password);
         User newUser = new User(name, email, hashedPassword, age, gender);
-        
-        String otp = otpService.generateOtp();
-        newUser.setOtp(otp);
-        newUser.setOtpExpires(LocalDateTime.now().plusMinutes(15));
-        
+
+        // Guardamos el usuario SIN verificar (verified = false por defecto)
         userRepository.save(newUser);
-        
-        otpService.sendOtpEmail(email, otp);
+
+        // Generar y enviar OTP usando el sistema nuevo (tabla OTP separada)
+        String otp = otpService.sendOtpForVerification(email);
         log.info("OTP para {}: {}", email, otp);
+
         return newUser;
     }
 
@@ -89,22 +88,18 @@ public class AuthService {
 
 
     public String verifyEmail(String email, String otp) {
+        // Validar OTP desde la tabla OTP (esto también lo elimina si es válido)
         otpService.validateOtp(email, otp);
+
+        // Buscar usuario
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
 
-        if (user.getOtp() == null || !user.getOtp().equals(otp)) {
-            throw new RuntimeException("OTP inválido.");
-        }
-
-        if (user.getOtpExpires().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("El OTP ha expirado.");
-        }
-
+        // Marcar como verificado
         user.setVerified(true);
-        user.setOtp(null);
-        user.setOtpExpires(null);
         userRepository.save(user);
+
+        log.info("✅ Email verificado exitosamente para: {}", email);
 
         // Generamos y retornamos un JWT token para que el usuario quede autenticado inmediatamente
         return jwtService.generateToken(user.getId());

@@ -31,7 +31,7 @@ import java.util.Collections;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = true;
+    private final Boolean skip = false;
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
@@ -82,11 +82,11 @@ public class DataSeeder implements CommandLineRunner {
 
         // --- Create Users ---
         log.info("Creando usuarios mock...");
-        User user1 = new User("Matias", "matias@uade.edu.ar", "1234", 25, "Masculino");
+        User user1 = new User("Matias", "matias@uade.edu.ar", "12345678", 25, "Masculino");
         user1.setId("6502251846b9a22a364b9011"); // Fixed ID for testing
-        User user2 = new User("Franco", "franco@uade.edu.ar", "1234", 29, "Masculino");
-        User user3 = new User("Horacio", "horacio@uade.edu.ar", "1234", 37, "Masculino");
-        User user4 = new User("Antonio", "antonio@uade.edu.ar", "1234", 24, "Masculino");
+        User user2 = new User("Franco", "franco@uade.edu.ar", "12345678", 29, "Masculino");
+        User user3 = new User("Horacio", "horacio@uade.edu.ar", "12345678", 37, "Masculino");
+        User user4 = new User("Antonio", "antonio@uade.edu.ar", "12345678", 24, "Masculino");
 
         List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4));
 
