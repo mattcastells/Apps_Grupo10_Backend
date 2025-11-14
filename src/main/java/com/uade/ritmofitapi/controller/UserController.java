@@ -6,21 +6,19 @@ import com.uade.ritmofitapi.dto.request.UserRequest;
 import com.uade.ritmofitapi.dto.response.UserResponse;
 import com.uade.ritmofitapi.model.User;
 import com.uade.ritmofitapi.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserService userService) { this.userService = userService; }
-
-    // POST /users (se mantiene por compatibilidad)
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserCreationRequest request) {
         try {
@@ -31,7 +29,6 @@ public class UserController {
         }
     }
 
-    // GET /users/{id}
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable String id) {
         try {
@@ -57,11 +54,11 @@ public class UserController {
         }
     }
 
-    // PUT /users/{id}/photo
-    @PutMapping("/{id}/photo")
-    public ResponseEntity<?> updatePhoto(@PathVariable String id, @RequestBody UpdatePhotoRequest req) {
+    @PutMapping("/my-photo")
+    public ResponseEntity<?> updatePhoto(Authentication authentication, @RequestBody UpdatePhotoRequest req) {
+        User user = (User) authentication.getPrincipal();
         try {
-            userService.updatePhoto(id, req);
+            userService.updatePhoto(user.getId(), req);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException bad) {
             return ResponseEntity.badRequest().body(bad.getMessage());
