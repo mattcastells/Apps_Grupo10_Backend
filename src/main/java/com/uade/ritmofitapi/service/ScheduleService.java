@@ -91,10 +91,14 @@ public class ScheduleService {
         int availableSlots = scheduledClass.getCapacity() - scheduledClass.getEnrolledCount();
 
         String locationName = "Sede no disponible";
+        String locationAddress = null;
+
         if (scheduledClass.getLocationId() != null) {
-            locationName = locationRepository.findById(scheduledClass.getLocationId())
-                    .map(loc -> loc.getName())
-                    .orElse("Sede no disponible");
+            var location = locationRepository.findById(scheduledClass.getLocationId());
+            if (location.isPresent()) {
+                locationName = location.get().getName();
+                locationAddress = location.get().getAddress();
+            }
         }
 
         return new ScheduledClassDto(
@@ -102,7 +106,8 @@ public class ScheduleService {
                 scheduledClass.getName(),
                 scheduledClass.getProfessor(),
                 scheduledClass.getDiscipline(),
-                scheduledClass.getLocation(),
+                locationName,
+                locationAddress,
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
                 availableSlots
