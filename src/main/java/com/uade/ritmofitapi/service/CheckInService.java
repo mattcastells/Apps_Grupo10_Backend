@@ -40,19 +40,18 @@ public class CheckInService {
         ScheduledClass scheduledClass = scheduledClassRepository.findById(request.getScheduledClassId())
                 .orElseThrow(() -> new RuntimeException("Clase no encontrada"));
 
-        // 3. Find user's booking for this class
-        UserBooking booking = bookingRepository
-                .findByUserIdAndScheduledClassId(userId, request.getScheduledClassId())
-                .orElseThrow(() -> new RuntimeException("NO_BOOKING_FOUND"));
-
-        // 4. Verify booking status is CONFIRMED
-        if (booking.getStatus() == BookingStatus.ATTENDED) {
+        // 3. Find user's CONFIRMED booking for this class
+        // Check if already attended
+        if (bookingRepository.existsByUserIdAndScheduledClassIdAndStatus(
+                userId, request.getScheduledClassId(), BookingStatus.ATTENDED)) {
             throw new RuntimeException("ALREADY_CHECKED_IN");
         }
 
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new RuntimeException("NO_BOOKING_FOUND");
-        }
+        // Find CONFIRMED booking
+        UserBooking booking = bookingRepository
+                .findByUserIdAndScheduledClassId(userId, request.getScheduledClassId())
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                .orElseThrow(() -> new RuntimeException("NO_BOOKING_FOUND"));
 
         // 5. Verify check-in time window (15 minutes before to 5 minutes after class start)
         LocalDateTime now = LocalDateTime.now();
