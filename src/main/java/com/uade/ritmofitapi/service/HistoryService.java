@@ -120,7 +120,18 @@ public class HistoryService {
         
         response.setStartDateTime(booking.getClassDateTime().format(dateTimeFormatter));
         response.setAttendanceStatus(booking.getStatus().name());
-        response.setUserReview(null); // TODO: Implement review system
+        
+        // Buscar calificación si existe
+        ClassRating rating = ratingRepository.findByBookingId(booking.getId()).orElse(null);
+        if (rating != null) {
+            HistoryDetailResponse.Review review = new HistoryDetailResponse.Review();
+            review.setRating(rating.getRating());
+            review.setComment(rating.getComment());
+            review.setCreatedAt(rating.getCreatedAt() != null ? rating.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null);
+            response.setUserReview(review);
+        } else {
+            response.setUserReview(null);
+        }
         
         return response;
     }

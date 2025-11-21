@@ -1,6 +1,7 @@
 package com.uade.ritmofitapi.config;
 
 import com.uade.ritmofitapi.model.ClassTemplate;
+import com.uade.ritmofitapi.model.ClassRating;
 import com.uade.ritmofitapi.model.Location;
 import com.uade.ritmofitapi.model.News;
 import com.uade.ritmofitapi.model.ScheduledClass;
@@ -13,6 +14,7 @@ import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import com.uade.ritmofitapi.repository.BookingRepository;
 import com.uade.ritmofitapi.repository.LocationRepository;
 import com.uade.ritmofitapi.repository.NewsRepository;
+import com.uade.ritmofitapi.repository.ClassRatingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,11 +41,12 @@ public class DataSeeder implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final LocationRepository locationRepository;
     private final NewsRepository newsRepository;
+    private final ClassRatingRepository ratingRepository;
 
     public DataSeeder(UserRepository userRepository, ClassTemplateRepository classTemplateRepository,
                       ScheduledClassRepository scheduledClassRepository, BookingRepository bookingRepository,
                       PasswordEncoder passwordEncoder, LocationRepository locationRepository,
-                      NewsRepository newsRepository) {
+                      NewsRepository newsRepository, ClassRatingRepository ratingRepository) {
         this.userRepository = userRepository;
         this.classTemplateRepository = classTemplateRepository;
         this.scheduledClassRepository = scheduledClassRepository;
@@ -51,6 +54,7 @@ public class DataSeeder implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
         this.locationRepository = locationRepository;
         this.newsRepository = newsRepository;
+        this.ratingRepository = ratingRepository;
     }
 
     @Override
@@ -70,6 +74,7 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.deleteAll();
         locationRepository.deleteAll();
         newsRepository.deleteAll();
+        ratingRepository.deleteAll();
         log.info("Base de datos limpiada completamente.");
 
         // --- Create Locations ---
@@ -135,6 +140,15 @@ public class DataSeeder implements CommandLineRunner {
         // --- Create News ---
         createNews();
         log.info("-> Noticias creadas.");
+
+        // --- Create Rating Mocked (con reseña) ---
+        createRatingMocked();
+        log.info("-> Reseña mock creada.");
+        
+        // --- Create Class Without Rating Mocked (sin reseña, para que se cree manualmente) ---
+        createClassWithoutRatingMocked();
+        log.info("-> Clase sin reseña mock creada.");
+
 
         log.info("===== DATOS MOCK CARGADOS CORRECTAMENTE =====");
     }
@@ -256,5 +270,120 @@ public class DataSeeder implements CommandLineRunner {
 
         newsRepository.saveAll(newsList);
     }
-}
 
+
+    private void createRatingMocked() {
+        // Buscar el primer usuario disponible
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            log.warn("No hay usuarios disponibles para crear la reseña mock");
+            return;
+        }
+        User user = users.get(0);
+
+        // Crear una clase que haya terminado hace 2 horas (dentro de las 24 horas)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime classEndTime = now.minusHours(2); // Hace 2 horas
+        LocalDateTime classStartTime = classEndTime.minusMinutes(60); // Clase de 60 minutos
+
+        // Buscar una plantilla de clase para usar como base
+        List<ClassTemplate> templates = classTemplateRepository.findAll();
+        if (templates.isEmpty()) {
+            log.warn("No hay plantillas de clase disponibles para crear la reseña");
+            return;
+        }
+
+        ClassTemplate template = templates.get(0);
+        
+        // Crear una clase programada que ya terminó
+        ScheduledClass pastClass = new ScheduledClass();
+        pastClass.setTemplateId(template.getId());
+        pastClass.setLocationId(template.getLocation() != null ? template.getLocation().getId() : null);
+        pastClass.setDiscipline(template.getDiscipline());
+        pastClass.setDateTime(classStartTime);
+        pastClass.setCapacity(template.getCapacity());
+        pastClass.setName(template.getName());
+        pastClass.setProfessor(template.getProfessor());
+        pastClass.setDurationMinutes(template.getDurationMinutes());
+        pastClass.setLocation(template.getLocation() != null ? template.getLocation().getName() : "Sede Centro");
+        pastClass.setEnrolledCount(1);
+        pastClass = scheduledClassRepository.save(pastClass);
+        log.info("Clase pasada creada para reseña: {} - {}", pastClass.getName(), pastClass.getDateTime());
+
+        // Crear un booking para esa clase con status ATTENDED
+        UserBooking booking = new UserBooking();
+        booking.setUserId(user.getId());
+        booking.setScheduledClassId(pastClass.getId());
+        booking.setClassName(pastClass.getName());
+        booking.setClassDateTime(pastClass.getDateTime());
+        booking.setLocation(pastClass.getLocation());
+        booking.setDurationMinutes(pastClass.getDurationMinutes());
+        booking.setStatus(BookingStatus.ATTENDED);
+        booking.setCreationDate(classStartTime.minusDays(2)); // Reservó hace 2 días
+        booking = bookingRepository.save(booking);
+        log.info("Booking creado para reseña: {}", booking.getId());
+
+        // Crear la reseña (calificación)
+        ClassRating rating = new ClassRating(
+                user.getId(),
+                booking.getId(),
+                5, // 5 estrellas
+                "Excelente clase! El profesor fue muy claro y la intensidad fue perfecta. Definitivamente volveré."
+        );
+        rating = ratingRepository.save(rating);
+        log.info("Reseña creada: {} estrellas para booking {} (usuario: {})", rating.getRating(), booking.getId(), user.getEmail());
+    }
+
+    private void createClassWithoutRatingMocked() {
+        // Buscar el primer usuario disponible
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            log.warn("No hay usuarios disponibles para crear la clase sin reseña mock");
+            return;
+        }
+        User user = users.get(0);
+
+        // Crear una clase que haya terminado hace 1 hora (dentro de las 24 horas, sin reseña)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime classEndTime = now.minusHours(1); // Hace 1 hora
+        LocalDateTime classStartTime = classEndTime.minusMinutes(45); // Clase de 45 minutos
+
+        // Buscar una plantilla de clase diferente para usar como base
+        List<ClassTemplate> templates = classTemplateRepository.findAll();
+        if (templates.size() < 2) {
+            log.warn("No hay suficientes plantillas de clase disponibles");
+            return;
+        }
+
+        ClassTemplate template = templates.get(1); // Usar una plantilla diferente
+        
+        // Crear una clase programada que ya terminó
+        ScheduledClass pastClass = new ScheduledClass();
+        pastClass.setTemplateId(template.getId());
+        pastClass.setLocationId(template.getLocation() != null ? template.getLocation().getId() : null);
+        pastClass.setDiscipline(template.getDiscipline());
+        pastClass.setDateTime(classStartTime);
+        pastClass.setCapacity(template.getCapacity());
+        pastClass.setName(template.getName());
+        pastClass.setProfessor(template.getProfessor());
+        pastClass.setDurationMinutes(template.getDurationMinutes());
+        pastClass.setLocation(template.getLocation() != null ? template.getLocation().getName() : "Sede Centro");
+        pastClass.setEnrolledCount(1);
+        pastClass = scheduledClassRepository.save(pastClass);
+        log.info("Clase pasada creada (sin reseña): {} - {}", pastClass.getName(), pastClass.getDateTime());
+
+        // Crear un booking para esa clase con status ATTENDED (sin reseña)
+        UserBooking booking = new UserBooking();
+        booking.setUserId(user.getId());
+        booking.setScheduledClassId(pastClass.getId());
+        booking.setClassName(pastClass.getName());
+        booking.setClassDateTime(pastClass.getDateTime());
+        booking.setLocation(pastClass.getLocation());
+        booking.setDurationMinutes(pastClass.getDurationMinutes());
+        booking.setStatus(BookingStatus.ATTENDED);
+        booking.setCreationDate(classStartTime.minusDays(1)); // Reservó hace 1 día
+        booking = bookingRepository.save(booking);
+        log.info("Booking creado (sin reseña) para usuario {}: {} - Clase terminó hace 1 hora", user.getEmail(), booking.getId());
+        log.info("Esta clase puede ser calificada desde la app (dentro de las 24 horas)");
+    }
+}
