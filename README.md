@@ -7,7 +7,7 @@ API Rest para la aplicación de gestión de gimnasios RitmoFit. Este backend man
 - Spring Boot 3.5.5
 - Apache Maven 3.8+
 - MongoDB Atlas
-- Elastic Email API (envío de emails)
+- Gmail SMTP (envío de emails vía JavaMail)
 - JWT (autenticación)
 
 ---
@@ -45,53 +45,49 @@ MONGO_PASSWORD=tu_password_de_mongodb_aqui
 
 ---
 
-#### **ELASTIC_EMAIL_API_KEY**
-API Key de Elastic Email para envío de correos electrónicos.
-
-**Cómo obtenerla:**
-1. Inicia sesión en https://elasticemail.com
-2. Ve a **"Settings"** (Configuración) en el menú lateral
-3. Haz clic en **"Create Additional Apikey"** (Crear clave API adicional)
-4. Dale un nombre descriptivo (ej: "RitmoFit Backend API")
-5. Selecciona permisos: marca **"Send Emails"** (Enviar emails)
-6. Copia la API Key generada (formato: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
-
-**IMPORTANTE:** Guarda esta clave de forma segura, no podrás verla nuevamente.
+#### **GMAIL_USERNAME**
+Tu dirección de email de Gmail.
 
 ```env
-ELASTIC_EMAIL_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+GMAIL_USERNAME=tucorreo@gmail.com
 ```
 
 ---
 
-#### **ELASTIC_EMAIL_FROM**
-Email del remitente (debe estar verificado en tu cuenta de Elastic Email).
+#### **GMAIL_APP_PASSWORD**
+Contraseña de aplicación generada desde tu cuenta de Google (NO tu contraseña normal).
 
-**Cómo verificarlo:**
-1. En Elastic Email, ve a **"Settings"** > **"Sending Domains"** o **"Sender & SMTP"**
-2. **Opción 1 - Verificar dominio completo (recomendado para producción):**
-   - Si tienes un dominio propio (ej: `ritmofit.com`), agrégalo y verifica con registros DNS
-   - Luego puedes usar cualquier email de ese dominio: `no-reply@ritmofit.com`
-3. **Opción 2 - Verificar email personal (para desarrollo):**
-   - Agrega tu email personal (ej: `tu_email@gmail.com`)
-   - Verifica haciendo clic en el enlace que te envían
+**IMPORTANTE:** Debes generar una **"Contraseña de aplicación"** específica para que el backend pueda enviar emails a través de Gmail SMTP.
+
+**Cómo obtenerla paso a paso:**
+
+1. **Ve a tu cuenta de Google:**
+   - Visita https://myaccount.google.com/security
+
+2. **Activa la verificación en 2 pasos:**
+   - Si no la tienes activada, busca **"Verificación en 2 pasos"** y actívala
+   - Sigue los pasos de Google para configurarla (SMS, llamada, o app Authenticator)
+
+3. **Genera una contraseña de aplicación:**
+   - Una vez activada la verificación en 2 pasos, busca **"Contraseñas de aplicaciones"** (App passwords)
+   - Si no la encuentras, ve directamente a: https://myaccount.google.com/apppasswords
+   - Haz clic en **"Seleccionar app"** y elige **"Otra (nombre personalizado)"**
+   - Escribe: `RitmoFit Backend`
+   - Haz clic en **"Generar"**
+
+4. **Copia la contraseña:**
+   - Google te mostrará una contraseña de 16 caracteres (formato: `xxxx xxxx xxxx xxxx`)
+   - **Cópiala inmediatamente** (solo se muestra una vez)
+   - Pégala en el `.env` **SIN ESPACIOS** (ej: `abcdefghijklmnop`)
+
+**Documentación oficial:**
+- https://support.google.com/accounts/answer/185833
 
 ```env
-ELASTIC_EMAIL_FROM=no-reply@ritmofit.com.ar
-# O si usas email personal para testing:
-# ELASTIC_EMAIL_FROM=tu_email@gmail.com
+GMAIL_APP_PASSWORD=abcdefghijklmnop
 ```
 
----
-
-#### **ELASTIC_EMAIL_FROM_NAME**
-Nombre del remitente (nombre visible en el email).
-
-Este es el nombre que aparecerá en la bandeja de entrada del destinatario.
-
-```env
-ELASTIC_EMAIL_FROM_NAME=RitmoFit
-```
+**NOTA:** Esta contraseña es diferente a tu contraseña de Gmail. Es específica para aplicaciones que necesitan acceder a tu cuenta.
 
 ---
 
@@ -144,9 +140,8 @@ Si prefieres no usar archivo `.env`, puedes configurar las variables de entorno 
 #### Opción 2: En la terminal (Linux/macOS)
 ```bash
 export MONGO_PASSWORD="tu_contraseña"
-export ELASTIC_EMAIL_API_KEY="tu_api_key"
-export ELASTIC_EMAIL_FROM="no-reply@ritmofit.com.ar"
-export ELASTIC_EMAIL_FROM_NAME="RitmoFit"
+export GMAIL_USERNAME="tucorreo@gmail.com"
+export GMAIL_APP_PASSWORD="tu_app_password"
 export JWT_SECRET_KEY="tu_clave_secreta_jwt"
 export JWT_EXPIRATION_MS="1000000000"
 ```
@@ -154,9 +149,8 @@ export JWT_EXPIRATION_MS="1000000000"
 #### Opción 3: En la terminal (Windows PowerShell)
 ```powershell
 $env:MONGO_PASSWORD="tu_contraseña"
-$env:ELASTIC_EMAIL_API_KEY="tu_api_key"
-$env:ELASTIC_EMAIL_FROM="no-reply@ritmofit.com.ar"
-$env:ELASTIC_EMAIL_FROM_NAME="RitmoFit"
+$env:GMAIL_USERNAME="tucorreo@gmail.com"
+$env:GMAIL_APP_PASSWORD="tu_app_password"
 $env:JWT_SECRET_KEY="tu_clave_secreta_jwt"
 $env:JWT_EXPIRATION_MS="1000000000"
 ```
@@ -187,38 +181,41 @@ Si todo ha salido bien, verás en la consola los logs de Spring Boot indicando q
 
 ## Verificación del Servicio de Email
 
-Para verificar que el servicio de Elastic Email está configurado correctamente:
+Para verificar que el servicio de Gmail SMTP está configurado correctamente:
 
 1. **Verifica las variables de entorno:**
-   - Asegúrate de que `ELASTIC_EMAIL_API_KEY` esté configurada
-   - Verifica que `ELASTIC_EMAIL_FROM` esté verificado en tu cuenta de Elastic Email
+   - Asegúrate de que `GMAIL_USERNAME` esté configurada con tu email
+   - Verifica que `GMAIL_APP_PASSWORD` sea la contraseña de aplicación (NO tu contraseña normal)
 
 2. **Prueba el registro de usuario:**
    - Haz una petición POST a `/api/v1/auth/register`
-   - Deberías recibir un email con el código OTP
+   - Deberías recibir un email con el código OTP en tu bandeja de entrada
 
 3. **Revisa los logs:**
    - Si hay algún error, aparecerá en la consola
    - Los logs indicarán si el email se envió correctamente
+   - Mensaje exitoso: `✅ Email enviado exitosamente a ... a través de Gmail SMTP`
 
 ---
 
-## Limitaciones de Elastic Email (Plan Free)
+## Limitaciones de Gmail SMTP
 
-**IMPORTANTE:** El plan gratuito de Elastic Email tiene las siguientes limitaciones:
+**Gmail SMTP tiene las siguientes limitaciones:**
 
-- ❌ **Solo puedes enviar emails a tu propia dirección registrada** (la cuenta con la que te registraste en Elastic Email)
-- ⚠️ **No puedes enviar a otros usuarios** sin comprar un plan pago
-- ✅ **Sirve para testing y desarrollo** enviando emails a ti mismo
+- ✅ **Puedes enviar emails a cualquier destinatario** (no solo a ti mismo)
+- ⚠️ **Límite diario:** 500 emails por día (suficiente para desarrollo y pequeñas producciones)
+- ⚠️ **Límite por hora:** Aproximadamente 100 emails por hora
+- ✅ **Gratis:** No tiene costo, solo necesitas una cuenta de Gmail
 
-**Para producción:**
-- Necesitarás un plan pago de Elastic Email (desde $0.10 por cada 1000 emails)
-- Debes verificar tu dominio (ej: `ritmofit.com.ar`)
-- Después de verificar, podrás enviar a cualquier destinatario
+**Recomendaciones:**
+- Para desarrollo y testing: Gmail SMTP es ideal ✅
+- Para producción con alto volumen: Considera servicios dedicados como SendGrid, AWS SES, o Mailgun
+- El límite de 500 emails/día es más que suficiente para la mayoría de aplicaciones universitarias
 
-**Alternativa para testing con múltiples usuarios:**
-- Considera usar **SendGrid** (100 emails/día gratis a cualquier destinatario)
-- O mantén **Mailtrap** para desarrollo y usa Elastic Email solo en producción
+**Si superas los límites:**
+- Google te bloqueará temporalmente el envío de emails
+- Recibirás un error `550 5.4.5 Daily sending quota exceeded`
+- El bloqueo se levanta automáticamente después de 24 horas
 
 ---
 
@@ -251,20 +248,37 @@ Para verificar que el servicio de Elastic Email está configurado correctamente:
 
 ## Troubleshooting
 
-### Error: "ELASTIC_EMAIL_API_KEY no está configurada correctamente"
-**Solución:** Verifica que hayas configurado la variable de entorno `ELASTIC_EMAIL_API_KEY` correctamente en tu archivo `.env` o en las variables de sistema.
+### Error: "Authentication failed" o "Username and Password not accepted"
+**Solución:**
+- Verifica que estés usando una **contraseña de aplicación** (NO tu contraseña de Gmail)
+- Asegúrate de haber activado la verificación en 2 pasos en tu cuenta de Google
+- Genera una nueva contraseña de aplicación desde https://myaccount.google.com/apppasswords
+- Verifica que no haya espacios en `GMAIL_APP_PASSWORD` (debe ser una cadena continua de 16 caracteres)
 
-### Error al enviar emails: "Error 401 Unauthorized"
-**Solución:** Tu API Key de Elastic Email es inválida o ha expirado. Genera una nueva desde el panel de Elastic Email.
+### Error: "Connection timed out" o "Could not connect to SMTP host"
+**Solución:**
+- Verifica tu conexión a internet
+- Asegúrate de que el puerto 587 no esté bloqueado por tu firewall
+- Si estás detrás de un proxy corporativo, puede que necesites configuración adicional
 
-### Error: "Email address not verified"
-**Solución:** Debes verificar el email del remitente (`ELASTIC_EMAIL_FROM`) en tu cuenta de Elastic Email antes de poder enviar correos.
+### Error: "Daily sending quota exceeded"
+**Solución:**
+- Has superado el límite de 500 emails/día de Gmail
+- Espera 24 horas para que se restablezca tu cuota
+- Considera usar un servicio de email dedicado si necesitas enviar más emails
 
 ### Los emails no llegan
 **Solución:**
-1. Verifica que el destinatario sea tu email registrado en Elastic Email (limitación del plan free)
-2. Revisa la carpeta de SPAM
-3. Revisa los logs de la aplicación para ver si hay errores
+1. Verifica que el email se haya enviado correctamente revisando los logs (debe aparecer `✅ Email enviado exitosamente`)
+2. Revisa la carpeta de SPAM del destinatario
+3. Verifica que `GMAIL_USERNAME` esté correctamente configurado
+4. Si el destinatario usa Gmail, puede tardar unos segundos en llegar
+
+### Error: "Failed messages: javax.mail.AuthenticationFailedException"
+**Solución:**
+- Tu cuenta de Gmail puede estar bloqueada temporalmente por intentos fallidos
+- Ve a https://accounts.google.com/DisplayUnlockCaptcha y desbloquea tu cuenta
+- Genera una nueva contraseña de aplicación
 
 ---
 

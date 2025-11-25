@@ -92,6 +92,11 @@
             <version>4.9.2</version>
             <scope>test</scope>
         </dependency>
+        <!-- Spring Mail - JavaMail para envío de emails con Gmail SMTP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 	</dependencies>
 
 	<build>
