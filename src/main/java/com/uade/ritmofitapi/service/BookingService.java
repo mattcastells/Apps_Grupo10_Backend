@@ -27,17 +27,20 @@ public class BookingService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final com.uade.ritmofitapi.repository.LocationRepository locationRepository;
+    private final NotificationService notificationService;
 
     public BookingService(BookingRepository bookingRepository,
                           ScheduledClassRepository scheduledClassRepository,
                           UserRepository userRepository,
                           EmailService emailService,
-                          com.uade.ritmofitapi.repository.LocationRepository locationRepository) {
+                          com.uade.ritmofitapi.repository.LocationRepository locationRepository,
+                          NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.locationRepository = locationRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -102,6 +105,18 @@ public class BookingService {
         newBooking.setDurationMinutes(scheduledClass.getDurationMinutes());
 
         UserBooking savedBooking = bookingRepository.save(newBooking);
+
+        // Crear notificación de recordatorio 1h antes de la clase
+        try {
+            notificationService.createBookingReminder(
+                    userId,
+                    savedBooking.getId(),
+                    scheduledClass.getName(),
+                    scheduledClass.getDateTime()
+            );
+        } catch (Exception e) {
+            System.err.println("Error creando notificación de recordatorio: " + e.getMessage());
+        }
 
         // Enviar email de confirmación
         try {
@@ -255,6 +270,24 @@ public class BookingService {
 
         scheduledClassRepository.save(scheduledClass);
         bookingRepository.save(booking);
+
+        // Crear notificación de cancelación
+        try {
+            notificationService.createBookingCancellation(
+                    userId,
+                    bookingId,
+                    scheduledClass.getName()
+            );
+        } catch (Exception e) {
+            System.err.println("Error creando notificación de cancelación: " + e.getMessage());
+        }
+
+        // Eliminar notificaciones de recordatorio pendientes para esta reserva
+        try {
+            notificationService.deleteNotificationsByBooking(bookingId);
+        } catch (Exception e) {
+            System.err.println("Error eliminando notificaciones pendientes: " + e.getMessage());
+        }
     }
 
     private UserBookingDto mapToUserBookingDto(UserBooking booking) {
