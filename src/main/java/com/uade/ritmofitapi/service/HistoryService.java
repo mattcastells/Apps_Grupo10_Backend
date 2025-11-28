@@ -2,10 +2,12 @@ package com.uade.ritmofitapi.service;
 
 import com.uade.ritmofitapi.dto.response.HistoryDetailResponse;
 import com.uade.ritmofitapi.dto.response.HistoryItemResponse;
+import com.uade.ritmofitapi.model.ClassRating;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.model.booking.BookingStatus;
 import com.uade.ritmofitapi.model.booking.UserBooking;
 import com.uade.ritmofitapi.repository.BookingRepository;
+import com.uade.ritmofitapi.repository.ClassRatingRepository;
 import com.uade.ritmofitapi.repository.ScheduledClassRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ public class HistoryService {
     private final BookingRepository bookingRepository;
     private final ScheduledClassRepository scheduledClassRepository;
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private final ClassRatingRepository ratingRepository;
 
     public List<HistoryItemResponse> getUserHistory(String userId, String fromDate, String toDate) {
         log.info("Getting history for user {} from {} to {}", userId, fromDate, toDate);
