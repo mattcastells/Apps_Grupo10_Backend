@@ -33,6 +33,9 @@ public class SecurityConfig {
                         // Permitimos el acceso público a las ubicaciones/sedes
                         .requestMatchers("/api/v1/locations/**").permitAll()
 
+                        // Permitir acceso a endpoints de mock para desarrollo
+                        .requestMatchers("/api/v1/mock/**").permitAll()
+
                         // Permitir acceso a /error (Spring Boot error page)
                         .requestMatchers("/error").permitAll()
 

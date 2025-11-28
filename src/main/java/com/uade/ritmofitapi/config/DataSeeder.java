@@ -137,6 +137,10 @@ public class DataSeeder implements CommandLineRunner {
         createHistoryBookings(user1);
         log.info("-> Reservas históricas creadas para el usuario de prueba.");
 
+        // --- Create history bookings for Antonio (with different date ranges) ---
+        createHistoryBookings(user4);
+        log.info("-> Reservas históricas creadas para Antonio (semana, mes, 3 meses).");
+
         // --- Create News ---
         createNews();
         log.info("-> Noticias creadas.");
@@ -171,7 +175,9 @@ public class DataSeeder implements CommandLineRunner {
     private void generateScheduledClasses() {
         LocalDate today = LocalDate.now();
         List<ClassTemplate> templates = classTemplateRepository.findAll();
-        for (int i = -28; i < 28; i++) { // From 4 weeks ago to 4 weeks in the future
+        
+        // Generar clases pasadas (últimos 90 días) para historial
+        for (int i = -90; i < 0; i++) {
             LocalDate date = today.plusDays(i);
             for (ClassTemplate template : templates) {
                 if (date.getDayOfWeek() == template.getDayOfWeek()) {
@@ -180,42 +186,117 @@ public class DataSeeder implements CommandLineRunner {
                 }
             }
         }
+        
+        // Generar clases futuras (próximos 60 días) para reservas
+        for (int i = 0; i < 60; i++) {
+            LocalDate date = today.plusDays(i);
+            for (ClassTemplate template : templates) {
+                if (date.getDayOfWeek() == template.getDayOfWeek()) {
+                    ScheduledClass scheduledClass = new ScheduledClass(template, LocalDateTime.of(date, template.getTime()));
+                    scheduledClassRepository.save(scheduledClass);
+                }
+            }
+        }
+        
+        log.info("Clases generadas: 90 días pasados (para historial) + 60 días futuros (para reservas)");
     }
 
     private void createHistoryBookings(User user) {
         LocalDate today = LocalDate.now();
         List<ScheduledClass> allClasses = scheduledClassRepository.findAll();
+        Random random = new Random();
         
-        // Filter classes from the past (within last 30 days)
-        List<ScheduledClass> pastClasses = allClasses.stream()
-            .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
-            .filter(sc -> sc.getDateTime().isAfter(today.minusDays(30).atStartOfDay()))
-            .toList();
-        
-        if (pastClasses.isEmpty()) {
-            log.warn("No hay clases pasadas disponibles para crear historial");
-            return;
-        }
-        
-        // Shuffle the list to get random classes
-        List<ScheduledClass> shuffledClasses = new ArrayList<>(pastClasses);
-        Collections.shuffle(shuffledClasses);
-        
-        // Create exactly 2 history bookings: one ATTENDED and one ABSENT
-        if (shuffledClasses.size() >= 2) {
-            // First booking: ATTENDED (present)
-            ScheduledClass class1 = shuffledClasses.get(0);
-            int daysBeforeClass1 = 3 + new Random().nextInt(7);
-            createHistoryBooking(user, class1, daysBeforeClass1, BookingStatus.ATTENDED);
+        // Si es Antonio, crear datos en diferentes rangos de fechas
+        if (user.getEmail().equals("antonio@uade.edu.ar")) {
+            // Obtener clases pasadas en diferentes rangos
+            List<ScheduledClass> weekClasses = allClasses.stream()
+                .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
+                .filter(sc -> sc.getDateTime().isAfter(today.minusDays(7).atStartOfDay()))
+                .collect(java.util.stream.Collectors.toList());
             
-            // Second booking: ABSENT (ausente)
-            ScheduledClass class2 = shuffledClasses.get(1);
-            int daysBeforeClass2 = 3 + new Random().nextInt(7);
-            createHistoryBooking(user, class2, daysBeforeClass2, BookingStatus.ABSENT);
+            List<ScheduledClass> monthClasses = allClasses.stream()
+                .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
+                .filter(sc -> sc.getDateTime().isAfter(today.minusDays(30).atStartOfDay()))
+                .filter(sc -> sc.getDateTime().isBefore(today.minusDays(7).atStartOfDay())) // Excluir la semana
+                .collect(java.util.stream.Collectors.toList());
             
-            log.info("Creadas 2 reservas históricas para usuario {}: 1 ATTENDED, 1 ABSENT", user.getEmail());
+            List<ScheduledClass> threeMonthsClasses = allClasses.stream()
+                .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
+                .filter(sc -> sc.getDateTime().isAfter(today.minusDays(90).atStartOfDay()))
+                .filter(sc -> sc.getDateTime().isBefore(today.minusDays(30).atStartOfDay())) // Excluir el mes
+                .collect(java.util.stream.Collectors.toList());
+            
+            log.info("Clases disponibles para {} - Semana: {}, Mes: {}, 3 Meses: {}", 
+                     user.getEmail(), weekClasses.size(), monthClasses.size(), threeMonthsClasses.size());
+            
+            int totalCreated = 0;
+            
+            // Crear 3-4 asistencias en la última semana
+            Collections.shuffle(weekClasses);
+            int weekCount = Math.min(4, weekClasses.size());
+            for (int i = 0; i < weekCount; i++) {
+                ScheduledClass sc = weekClasses.get(i);
+                BookingStatus status = (i % 2 == 0) ? BookingStatus.ATTENDED : BookingStatus.ABSENT;
+                createHistoryBooking(user, sc, 2 + random.nextInt(3), status);
+                totalCreated++;
+            }
+            log.info("Creadas {} asistencias para {} en la última semana", weekCount, user.getEmail());
+            
+            // Crear 5-6 asistencias en el último mes (excluyendo la semana)
+            Collections.shuffle(monthClasses);
+            int monthCount = Math.min(6, monthClasses.size());
+            for (int i = 0; i < monthCount; i++) {
+                ScheduledClass sc = monthClasses.get(i);
+                BookingStatus status = (i % 3 == 0) ? BookingStatus.ABSENT : BookingStatus.ATTENDED;
+                createHistoryBooking(user, sc, 3 + random.nextInt(5), status);
+                totalCreated++;
+            }
+            log.info("Creadas {} asistencias para {} en el último mes", monthCount, user.getEmail());
+            
+            // Crear 8-10 asistencias en los últimos 3 meses (excluyendo el mes)
+            Collections.shuffle(threeMonthsClasses);
+            int threeMonthsCount = Math.min(10, threeMonthsClasses.size());
+            for (int i = 0; i < threeMonthsCount; i++) {
+                ScheduledClass sc = threeMonthsClasses.get(i);
+                BookingStatus status = (i % 4 == 0) ? BookingStatus.ABSENT : BookingStatus.ATTENDED;
+                createHistoryBooking(user, sc, 5 + random.nextInt(10), status);
+                totalCreated++;
+            }
+            log.info("Creadas {} asistencias para {} en los últimos 3 meses", threeMonthsCount, user.getEmail());
+            
+            log.info("Total de asistencias creadas para {}: {}", user.getEmail(), totalCreated);
         } else {
-            log.warn("No hay suficientes clases pasadas para crear historial completo");
+            // Para otros usuarios, crear solo 2 reservas históricas (comportamiento original)
+            List<ScheduledClass> pastClasses = allClasses.stream()
+                .filter(sc -> sc.getDateTime().isBefore(LocalDateTime.now()))
+                .filter(sc -> sc.getDateTime().isAfter(today.minusDays(30).atStartOfDay()))
+                .toList();
+            
+            if (pastClasses.isEmpty()) {
+                log.warn("No hay clases pasadas disponibles para crear historial");
+                return;
+            }
+            
+            // Shuffle the list to get random classes
+            List<ScheduledClass> shuffledClasses = new ArrayList<>(pastClasses);
+            Collections.shuffle(shuffledClasses);
+            
+            // Create exactly 2 history bookings: one ATTENDED and one ABSENT
+            if (shuffledClasses.size() >= 2) {
+                // First booking: ATTENDED (present)
+                ScheduledClass class1 = shuffledClasses.get(0);
+                int daysBeforeClass1 = 3 + random.nextInt(7);
+                createHistoryBooking(user, class1, daysBeforeClass1, BookingStatus.ATTENDED);
+                
+                // Second booking: ABSENT (ausente)
+                ScheduledClass class2 = shuffledClasses.get(1);
+                int daysBeforeClass2 = 3 + random.nextInt(7);
+                createHistoryBooking(user, class2, daysBeforeClass2, BookingStatus.ABSENT);
+                
+                log.info("Creadas 2 reservas históricas para usuario {}: 1 ATTENDED, 1 ABSENT", user.getEmail());
+            } else {
+                log.warn("No hay suficientes clases pasadas para crear historial completo");
+            }
         }
     }
 
