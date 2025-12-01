@@ -18,4 +18,5 @@ public interface BookingRepository extends MongoRepository<UserBooking, String> 
     List<UserBooking> findByUserIdAndClassDateTimeBetween(String userId, LocalDateTime start, LocalDateTime end);
     Optional<UserBooking> findByUserIdAndScheduledClassId(String id, String id1);
     List<UserBooking> findAllByUserIdAndScheduledClassIdAndStatus(String userId, String scheduledClassId, BookingStatus status);
+    List<UserBooking> findAllByScheduledClassIdAndStatus(String scheduledClassId, BookingStatus status);
 }

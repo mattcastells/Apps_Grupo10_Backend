@@ -1,6 +1,8 @@
 package com.uade.ritmofitapi.controller;
 
+import com.uade.ritmofitapi.dto.request.UpdateScheduledClassRequest;
 import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
+import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.service.ScheduleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,5 +49,28 @@ public class ScheduleController {
     public ResponseEntity<ScheduledClassDto> getClassDetail(@PathVariable String classId) {
         ScheduledClassDto classDetail = scheduleService.getClassDetail(classId);
         return ResponseEntity.ok(classDetail);
+    }
+
+    /**
+     * Cancelar una clase programada (solo admin via Postman)
+     * POST /api/v1/schedule/{classId}/cancel
+     */
+    @PostMapping("/{classId}/cancel")
+    public ResponseEntity<ScheduledClass> cancelClass(@PathVariable String classId) {
+        ScheduledClass cancelled = scheduleService.cancelClass(classId);
+        return ResponseEntity.ok(cancelled);
+    }
+
+    /**
+     * Actualizar horario/sede de una clase (solo admin via Postman)
+     * PUT /api/v1/schedule/{classId}
+     */
+    @PutMapping("/{classId}")
+    public ResponseEntity<ScheduledClass> updateClass(
+            @PathVariable String classId,
+            @RequestBody UpdateScheduledClassRequest request
+    ) {
+        ScheduledClass updated = scheduleService.updateClass(classId, request);
+        return ResponseEntity.ok(updated);
     }
 }

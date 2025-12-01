@@ -69,16 +69,16 @@ public class NotificationService {
     }
 
     /**
-     * Marcar notificación como recibida (usuario la vio/clickeó)
+     * Marcar notificación como leída (usuario la vio/clickeó/tocó)
      */
-    public Notification markAsReceived(String notificationId) {
+    public Notification markAsRead(String notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
-        notification.setStatus(Notification.NotificationStatus.RECIBIDA);
-        notification.setReceivedAt(LocalDateTime.now());
+        notification.setStatus(Notification.NotificationStatus.LEIDA);
+        notification.setReadAt(LocalDateTime.now());
 
-        log.info("✅ Notification {} marked as RECEIVED by user", notificationId);
+        log.info("✅ Notification {} marked as READ by user", notificationId);
         return notificationRepository.save(notification);
     }
 
@@ -159,6 +159,47 @@ public class NotificationService {
                 title,
                 message,
                 LocalDateTime.now(), // Enviar inmediatamente
+                bookingId
+        );
+    }
+
+    /**
+     * Crear notificación de cambio de clase (sede/horario)
+     */
+    public Notification createClassChanged(String userId, String bookingId, String className, String changeDetails) {
+        String title = "📍 Cambio en tu Clase";
+        String message = String.format("Tu clase de %s: %s", className, changeDetails);
+
+        return createNotification(
+                userId,
+                Notification.NotificationType.CLASS_CHANGED,
+                title,
+                message,
+                LocalDateTime.now(), // Enviar inmediatamente
+                bookingId
+        );
+    }
+
+    /**
+     * Crear notificación de solicitud de calificación (después del check-in)
+     */
+    public Notification createRatingRequest(String userId, String bookingId, String className, String professorName, LocalDateTime classEndTime) {
+        String title = "⭐ ¿Cómo fue tu clase?";
+        String message = String.format(
+                "¿Cómo fue tu clase de %s con %s? ¡Califica tu experiencia!",
+                className,
+                professorName
+        );
+
+        // Programar para 5 minutos después de que termine la clase
+        LocalDateTime requestTime = classEndTime.plusMinutes(5);
+
+        return createNotification(
+                userId,
+                Notification.NotificationType.REQUEST_RATING,
+                title,
+                message,
+                requestTime,
                 bookingId
         );
     }

@@ -1,9 +1,14 @@
 package com.uade.ritmofitapi.service;
 
+import com.uade.ritmofitapi.dto.request.UpdateScheduledClassRequest;
 import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
+import com.uade.ritmofitapi.model.Notification;
 import com.uade.ritmofitapi.model.ScheduledClass;
+import com.uade.ritmofitapi.model.booking.UserBooking;
+import com.uade.ritmofitapi.repository.BookingRepository;
 import com.uade.ritmofitapi.repository.LocationRepository;
 import com.uade.ritmofitapi.repository.ScheduledClassRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -14,15 +19,22 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ScheduleService {
 
     private final ScheduledClassRepository scheduledClassRepository;
     private final LocationRepository locationRepository;
+    private final BookingRepository bookingRepository;
+    private final NotificationService notificationService;
 
     public ScheduleService(ScheduledClassRepository scheduledClassRepository,
-                           LocationRepository locationRepository) {
+                           LocationRepository locationRepository,
+                           BookingRepository bookingRepository,
+                           NotificationService notificationService) {
         this.scheduledClassRepository = scheduledClassRepository;
         this.locationRepository = locationRepository;
+        this.bookingRepository = bookingRepository;
+        this.notificationService = notificationService;
     }
 
     public List<ScheduledClassDto> getWeeklySchedule() {
@@ -112,5 +124,117 @@ public class ScheduleService {
                 scheduledClass.getDurationMinutes(),
                 availableSlots
         );
+    }
+
+    /**
+     * Cancela una clase programada y notifica a todos los usuarios inscritos
+     */
+    public ScheduledClass cancelClass(String classId) {
+        // 1. Buscar la clase
+        ScheduledClass scheduledClass = scheduledClassRepository.findById(classId)
+                .orElseThrow(() -> new RuntimeException("Clase no encontrada"));
+
+        // 2. Marcar como cancelada
+        scheduledClass.setCancelled(true);
+        scheduledClassRepository.save(scheduledClass);
+
+        // 3. Buscar todos los bookings con status CONFIRMED
+        List<UserBooking> activeBookings = bookingRepository.findAllByScheduledClassIdAndStatus(
+                classId,
+                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED
+        );
+
+        log.info("🚫 Class {} cancelled. Notifying {} users", classId, activeBookings.size());
+
+        // 4. Crear notificación para cada usuario
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        for (UserBooking booking : activeBookings) {
+            String title = "❌ Clase Cancelada";
+            String message = String.format(
+                    "La clase de %s programada para el %s ha sido cancelada. Por favor revisa tu agenda.",
+                    scheduledClass.getName(),
+                    scheduledClass.getDateTime().format(formatter)
+            );
+
+            notificationService.createNotification(
+                    booking.getUserId(),
+                    Notification.NotificationType.BOOKING_CANCELLED,
+                    title,
+                    message,
+                    LocalDateTime.now(),  // Enviar inmediatamente
+                    booking.getId()
+            );
+        }
+
+        return scheduledClass;
+    }
+
+    /**
+     * Actualiza horario/sede de una clase y notifica a todos los usuarios inscritos
+     */
+    public ScheduledClass updateClass(String classId, UpdateScheduledClassRequest request) {
+        // 1. Buscar la clase
+        ScheduledClass scheduledClass = scheduledClassRepository.findById(classId)
+                .orElseThrow(() -> new RuntimeException("Clase no encontrada"));
+
+        // Guardar datos originales
+        LocalDateTime originalDateTime = scheduledClass.getDateTime();
+        String originalLocation = scheduledClass.getLocation();
+
+        // 2. Actualizar campos si vienen en el request
+        boolean hasChanges = false;
+        StringBuilder changesDescription = new StringBuilder();
+
+        if (request.getNewDateTime() != null && !request.getNewDateTime().equals(originalDateTime)) {
+            scheduledClass.setDateTime(request.getNewDateTime());
+            hasChanges = true;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            changesDescription.append(String.format("Nuevo horario: %s", request.getNewDateTime().format(formatter)));
+        }
+
+        if (request.getNewLocationId() != null && !request.getNewLocationId().equals(scheduledClass.getLocationId())) {
+            scheduledClass.setLocationId(request.getNewLocationId());
+            if (request.getNewLocation() != null) {
+                scheduledClass.setLocation(request.getNewLocation());
+            }
+            hasChanges = true;
+            if (changesDescription.length() > 0) changesDescription.append(". ");
+            changesDescription.append(String.format("Nueva sede: %s", request.getNewLocation()));
+        }
+
+        if (!hasChanges) {
+            throw new IllegalArgumentException("No se proporcionaron cambios para actualizar");
+        }
+
+        scheduledClassRepository.save(scheduledClass);
+
+        // 3. Buscar todos los bookings con status CONFIRMED
+        List<UserBooking> activeBookings = bookingRepository.findAllByScheduledClassIdAndStatus(
+                classId,
+                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED
+        );
+
+        log.info("📝 Class {} updated. Notifying {} users", classId, activeBookings.size());
+
+        // 4. Crear notificación para cada usuario
+        for (UserBooking booking : activeBookings) {
+            String title = "⚠️ Cambio en tu Clase";
+            String message = String.format(
+                    "La clase de %s ha sido modificada. %s",
+                    scheduledClass.getName(),
+                    changesDescription.toString()
+            );
+
+            notificationService.createNotification(
+                    booking.getUserId(),
+                    Notification.NotificationType.CLASS_CHANGED,
+                    title,
+                    message,
+                    LocalDateTime.now(),  // Enviar inmediatamente
+                    booking.getId()
+            );
+        }
+
+        return scheduledClass;
     }
 }

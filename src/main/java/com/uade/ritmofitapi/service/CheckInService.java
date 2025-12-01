@@ -23,13 +23,16 @@ public class CheckInService {
     private final BookingRepository bookingRepository;
     private final ScheduledClassRepository scheduledClassRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public CheckInService(BookingRepository bookingRepository,
                          ScheduledClassRepository scheduledClassRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository,
+                         NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -116,23 +119,37 @@ public class CheckInService {
                 .max(Comparator.comparing(UserBooking::getCreationDate))
                 .orElseThrow(() -> new RuntimeException("NO_BOOKING_FOUND"));
 
-        // 5. Verify class has not expired
+        // 5. Verify check-in time window: 1 hour before until class ends
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime classStart = scheduledClass.getDateTime();
         LocalDateTime classEnd = classStart.plusMinutes(scheduledClass.getDurationMinutes());
+        LocalDateTime checkInOpenTime = classStart.minusHours(1);
 
-        // Only check if class has already ended
+        // Check if too early (more than 1 hour before class)
+        if (now.isBefore(checkInOpenTime)) {
+            throw new RuntimeException("CHECK_IN_TOO_EARLY");
+        }
+
+        // Check if class has already ended
         if (now.isAfter(classEnd)) {
             throw new RuntimeException("CLASS_EXPIRED");
         }
-
-        // Allow check-in for future classes (no time restrictions)
 
         // 6. Update booking status to ATTENDED
         booking.setStatus(BookingStatus.ATTENDED);
         bookingRepository.save(booking);
 
-        // 7. Build and return response
+        // 7. Create rating request notification (programmed for after class ends)
+        LocalDateTime classEndTime = scheduledClass.getDateTime().plusMinutes(scheduledClass.getDurationMinutes());
+        notificationService.createRatingRequest(
+                userId,
+                booking.getId(),
+                scheduledClass.getName(),
+                scheduledClass.getProfessor(),
+                classEndTime
+        );
+
+        // 8. Build and return response
         return CheckInResponse.builder()
                 .bookingId(booking.getId())
                 .className(scheduledClass.getName())

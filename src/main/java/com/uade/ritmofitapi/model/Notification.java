@@ -72,9 +72,9 @@ public class Notification {
     private LocalDateTime sentAt;
 
     /**
-     * Fecha y hora de recepción/lectura (cuando status = RECIBIDA)
+     * Fecha y hora de lectura (cuando status = LEIDA)
      */
-    private LocalDateTime receivedAt;
+    private LocalDateTime readAt;
 
     /**
      * Datos adicionales en formato JSON (opcional)
@@ -96,12 +96,14 @@ public class Notification {
         BOOKING_REMINDER,       // Recordatorio 1h antes de la clase
         BOOKING_CANCELLED,      // Clase cancelada
         BOOKING_RESCHEDULED,    // Clase reprogramada
+        CLASS_CHANGED,          // Clase cambió sede/horario
+        REQUEST_RATING,         // Solicitud de calificación después de check-in
         GENERAL                 // Notificación general
     }
 
     public enum NotificationStatus {
-        PENDIENTE,  // Esperando ser enviada
-        ENVIADA,    // Enviada al dispositivo
-        RECIBIDA    // Usuario la vio/clickeó
+        PENDIENTE,  // Creada, esperando ser enviada
+        ENVIADA,    // Mostrada al usuario
+        LEIDA       // Usuario la leyó/tocó
     }
 }
