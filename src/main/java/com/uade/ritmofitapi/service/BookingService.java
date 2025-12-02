@@ -30,11 +30,11 @@ public class BookingService {
     private final NotificationService notificationService;
 
     public BookingService(BookingRepository bookingRepository,
-                          ScheduledClassRepository scheduledClassRepository,
-                          UserRepository userRepository,
-                          EmailService emailService,
-                          com.uade.ritmofitapi.repository.LocationRepository locationRepository,
-                          NotificationService notificationService) {
+            ScheduledClassRepository scheduledClassRepository,
+            UserRepository userRepository,
+            EmailService emailService,
+            com.uade.ritmofitapi.repository.LocationRepository locationRepository,
+            NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.scheduledClassRepository = scheduledClassRepository;
         this.userRepository = userRepository;
@@ -49,7 +49,8 @@ public class BookingService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + userId));
 
         ScheduledClass scheduledClass = scheduledClassRepository.findById(bookingRequest.getScheduledClassId())
-                .orElseThrow(() -> new RuntimeException("Clase agendada no encontrada con ID: " + bookingRequest.getScheduledClassId()));
+                .orElseThrow(() -> new RuntimeException(
+                        "Clase agendada no encontrada con ID: " + bookingRequest.getScheduledClassId()));
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -70,15 +71,18 @@ public class BookingService {
         }
 
         // VALIDACIÓN 4: Solo bloquear si ya tiene una reserva CONFIRMADA
-        if (bookingRepository.existsByUserIdAndScheduledClassIdAndStatus(userId, scheduledClass.getId(), BookingStatus.CONFIRMED)) {
+        if (bookingRepository.existsByUserIdAndScheduledClassIdAndStatus(userId, scheduledClass.getId(),
+                BookingStatus.CONFIRMED)) {
             throw new AlreadyBookedException("La clase ya fue reservada por este usuario.");
         }
 
-        // VALIDACIÓN 5: Validar horarios solapados: buscar reservas confirmadas del usuario
+        // VALIDACIÓN 5: Validar horarios solapados: buscar reservas confirmadas del
+        // usuario
         LocalDateTime classStart = scheduledClass.getDateTime();
         LocalDateTime classEnd = classStart.plusMinutes(scheduledClass.getDurationMinutes());
 
-        List<UserBooking> userConfirmedBookings = bookingRepository.findAllByUserIdAndStatus(userId, BookingStatus.CONFIRMED);
+        List<UserBooking> userConfirmedBookings = bookingRepository.findAllByUserIdAndStatus(userId,
+                BookingStatus.CONFIRMED);
 
         for (UserBooking existingBooking : userConfirmedBookings) {
             LocalDateTime existingStart = existingBooking.getClassDateTime();
@@ -86,7 +90,8 @@ public class BookingService {
 
             // Verificar si hay solapamiento
             if (classStart.isBefore(existingEnd) && classEnd.isAfter(existingStart)) {
-                throw new RuntimeException("Ya tenés una clase reservada en este horario. No podés reservar clases que se solapen.");
+                throw new RuntimeException(
+                        "Ya tenés una clase reservada en este horario. No podés reservar clases que se solapen.");
             }
         }
 
@@ -111,9 +116,9 @@ public class BookingService {
             notificationService.createBookingReminder(
                     userId,
                     savedBooking.getId(),
+                    scheduledClass.getId(), // scheduledClassId
                     scheduledClass.getName(),
-                    scheduledClass.getDateTime()
-            );
+                    scheduledClass.getDateTime());
         } catch (Exception e) {
             System.err.println("Error creando notificación de recordatorio: " + e.getMessage());
         }
@@ -122,21 +127,20 @@ public class BookingService {
         try {
             String subject = "Reserva confirmada - " + scheduledClass.getName();
             String body = String.format(
-                "Hola %s,\n\n" +
-                "Tu reserva ha sido confirmada exitosamente.\n\n" +
-                "Detalles de la clase:\n" +
-                "- Clase: %s\n" +
-                "- Profesor: %s\n" +
-                "- Fecha y hora: %s\n" +
-                "- Duración: %d minutos\n\n" +
-                "¡Te esperamos!\n\n" +
-                "RitmoFit",
-                user.getName(),
-                scheduledClass.getName(),
-                scheduledClass.getProfessor(),
-                scheduledClass.getDateTime().toString(),
-                scheduledClass.getDurationMinutes()
-            );
+                    "Hola %s,\n\n" +
+                            "Tu reserva ha sido confirmada exitosamente.\n\n" +
+                            "Detalles de la clase:\n" +
+                            "- Clase: %s\n" +
+                            "- Profesor: %s\n" +
+                            "- Fecha y hora: %s\n" +
+                            "- Duración: %d minutos\n\n" +
+                            "¡Te esperamos!\n\n" +
+                            "RitmoFit",
+                    user.getName(),
+                    scheduledClass.getName(),
+                    scheduledClass.getProfessor(),
+                    scheduledClass.getDateTime().toString(),
+                    scheduledClass.getDurationMinutes());
             emailService.sendEmail(user.getEmail(), subject, body);
         } catch (Exception e) {
             // Log error pero no fallar la reserva si el email falla
@@ -178,11 +182,9 @@ public class BookingService {
         // Retornar todas las reservas pasadas o canceladas/expiradas
         LocalDateTime now = LocalDateTime.now();
         return bookings.stream()
-                .filter(booking ->
-                    booking.getClassDateTime().isBefore(now) ||
-                    booking.getStatus() == BookingStatus.CANCELLED ||
-                    booking.getStatus() == BookingStatus.EXPIRED
-                )
+                .filter(booking -> booking.getClassDateTime().isBefore(now) ||
+                        booking.getStatus() == BookingStatus.CANCELLED ||
+                        booking.getStatus() == BookingStatus.EXPIRED)
                 .sorted((a, b) -> b.getClassDateTime().compareTo(a.getClassDateTime())) // Más recientes primero
                 .map(this::mapToUserBookingDto)
                 .collect(Collectors.toList());
@@ -191,7 +193,8 @@ public class BookingService {
     @Transactional
     protected void updateExpiredBookings(String userId) {
         LocalDateTime now = LocalDateTime.now();
-        List<UserBooking> confirmedBookings = bookingRepository.findAllByUserIdAndStatus(userId, BookingStatus.CONFIRMED);
+        List<UserBooking> confirmedBookings = bookingRepository.findAllByUserIdAndStatus(userId,
+                BookingStatus.CONFIRMED);
 
         for (UserBooking booking : confirmedBookings) {
             // Si la clase ya pasó, marcar como expirada
@@ -219,7 +222,8 @@ public class BookingService {
     }
 
     /**
-     * Obtener IDs de clases ya reservadas por el usuario (solo confirmadas y futuras)
+     * Obtener IDs de clases ya reservadas por el usuario (solo confirmadas y
+     * futuras)
      * Para que el frontend pueda filtrar/marcar las clases en el catálogo
      */
     public List<String> getBookedClassIds(String userId) {
@@ -276,8 +280,7 @@ public class BookingService {
             notificationService.createBookingCancellation(
                     userId,
                     bookingId,
-                    scheduledClass.getName()
-            );
+                    scheduledClass.getName());
         } catch (Exception e) {
             System.err.println("Error creando notificación de cancelación: " + e.getMessage());
         }
@@ -320,8 +323,7 @@ public class BookingService {
                 professor,
                 location,
                 durationMinutes,
-                booking.getStatus().toString()
-        );
+                booking.getStatus().toString());
     }
 
     private BookingResponse mapToBookingResponse(UserBooking booking) {

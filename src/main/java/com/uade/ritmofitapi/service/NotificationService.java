@@ -25,9 +25,10 @@ public class NotificationService {
             String title,
             String message,
             LocalDateTime scheduledFor,
-            String bookingId
-    ) {
-        Notification notification = new Notification(userId, type, title, message, scheduledFor, bookingId);
+            String bookingId,
+            String scheduledClassId) {
+        Notification notification = new Notification(userId, type, title, message, scheduledFor, bookingId,
+                scheduledClassId);
         Notification saved = notificationRepository.save(notification);
         log.info("✅ Notification created for user {} - Type: {} - Scheduled for: {}", userId, type, scheduledFor);
         return saved;
@@ -69,16 +70,16 @@ public class NotificationService {
     }
 
     /**
-     * Marcar notificación como leída (usuario la vio/clickeó/tocó)
+     * Marcar notificación como recibida (usuario la vio/clickeó/tocó)
      */
-    public Notification markAsRead(String notificationId) {
+    public Notification markAsReceived(String notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
-        notification.setStatus(Notification.NotificationStatus.LEIDA);
-        notification.setReadAt(LocalDateTime.now());
+        notification.setStatus(Notification.NotificationStatus.RECIBIDA);
+        notification.setReceivedAt(LocalDateTime.now());
 
-        log.info("✅ Notification {} marked as READ by user", notificationId);
+        log.info("✅ Notification {} marked as RECEIVED by user", notificationId);
         return notificationRepository.save(notification);
     }
 
@@ -90,8 +91,7 @@ public class NotificationService {
         LocalDateTime now = LocalDateTime.now();
         List<Notification> pending = notificationRepository.findByStatusAndScheduledForBefore(
                 Notification.NotificationStatus.PENDIENTE,
-                now
-        );
+                now);
 
         log.info("📋 Found {} pending notifications to process", pending.size());
         return pending;
@@ -108,7 +108,8 @@ public class NotificationService {
     /**
      * Crear notificación de recordatorio 1h antes de la clase
      */
-    public Notification createBookingReminder(String userId, String bookingId, String className, LocalDateTime classDateTime) {
+    public Notification createBookingReminder(String userId, String bookingId, String scheduledClassId,
+            String className, LocalDateTime classDateTime) {
         LocalDateTime reminderTime = classDateTime.minusHours(1);
 
         String title = "⏰ Recordatorio de Clase";
@@ -120,8 +121,8 @@ public class NotificationService {
                 title,
                 message,
                 reminderTime,
-                bookingId
-        );
+                bookingId,
+                scheduledClassId);
     }
 
     /**
@@ -137,21 +138,22 @@ public class NotificationService {
                 title,
                 message,
                 LocalDateTime.now(), // Enviar inmediatamente
-                bookingId
+                bookingId,
+                null // No scheduledClassId for cancellations
         );
     }
 
     /**
      * Crear notificación de reprogramación
      */
-    public Notification createBookingRescheduled(String userId, String bookingId, String className, LocalDateTime newDateTime) {
+    public Notification createBookingRescheduled(String userId, String bookingId, String className,
+            LocalDateTime newDateTime) {
         String title = "🔄 Clase Reprogramada";
         String message = String.format(
                 "Tu clase de %s ha sido reprogramada para el %s a las %s",
                 className,
                 newDateTime.toLocalDate(),
-                newDateTime.toLocalTime()
-        );
+                newDateTime.toLocalTime());
 
         return createNotification(
                 userId,
@@ -159,8 +161,8 @@ public class NotificationService {
                 title,
                 message,
                 LocalDateTime.now(), // Enviar inmediatamente
-                bookingId
-        );
+                bookingId,
+                null);
     }
 
     /**
@@ -176,20 +178,20 @@ public class NotificationService {
                 title,
                 message,
                 LocalDateTime.now(), // Enviar inmediatamente
-                bookingId
-        );
+                bookingId,
+                null);
     }
 
     /**
      * Crear notificación de solicitud de calificación (después del check-in)
      */
-    public Notification createRatingRequest(String userId, String bookingId, String className, String professorName, LocalDateTime classEndTime) {
+    public Notification createRatingRequest(String userId, String bookingId, String className, String professorName,
+            LocalDateTime classEndTime) {
         String title = "⭐ ¿Cómo fue tu clase?";
         String message = String.format(
                 "¿Cómo fue tu clase de %s con %s? ¡Califica tu experiencia!",
                 className,
-                professorName
-        );
+                professorName);
 
         // Programar para 5 minutos después de que termine la clase
         LocalDateTime requestTime = classEndTime.plusMinutes(5);
@@ -200,7 +202,7 @@ public class NotificationService {
                 title,
                 message,
                 requestTime,
-                bookingId
-        );
+                bookingId,
+                null);
     }
 }

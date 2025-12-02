@@ -28,9 +28,9 @@ public class ScheduleService {
     private final NotificationService notificationService;
 
     public ScheduleService(ScheduledClassRepository scheduledClassRepository,
-                           LocationRepository locationRepository,
-                           BookingRepository bookingRepository,
-                           NotificationService notificationService) {
+            LocationRepository locationRepository,
+            BookingRepository bookingRepository,
+            NotificationService notificationService) {
         this.scheduledClassRepository = scheduledClassRepository;
         this.locationRepository = locationRepository;
         this.bookingRepository = bookingRepository;
@@ -60,13 +60,15 @@ public class ScheduleService {
 
     /**
      * Obtener clases con filtros opcionales
+     * 
      * @param locationId ID de la sede (opcional)
      * @param discipline Nombre de la disciplina (opcional)
-     * @param fromDate Fecha desde en formato dd-MM-yyyy (opcional)
-     * @param toDate Fecha hasta en formato dd-MM-yyyy (opcional)
+     * @param fromDate   Fecha desde en formato dd-MM-yyyy (opcional)
+     * @param toDate     Fecha hasta en formato dd-MM-yyyy (opcional)
      * @return Lista de clases filtradas
      */
-    public List<ScheduledClassDto> getFilteredSchedule(String locationId, String discipline, String fromDate, String toDate) {
+    public List<ScheduledClassDto> getFilteredSchedule(String locationId, String discipline, String fromDate,
+            String toDate) {
         // Establecer rango de fechas por defecto
         LocalDateTime startDate = LocalDate.now().atStartOfDay();
         LocalDateTime endDate = startDate.plusDays(30); // Por defecto próximos 30 días
@@ -94,7 +96,8 @@ public class ScheduleService {
         // Aplicar filtros opcionales
         return classes.stream()
                 .filter(c -> locationId == null || locationId.isBlank() || locationId.equals(c.getLocationId()))
-                .filter(c -> discipline == null || discipline.isBlank() || discipline.equalsIgnoreCase(c.getDiscipline()))
+                .filter(c -> discipline == null || discipline.isBlank()
+                        || discipline.equalsIgnoreCase(c.getDiscipline()))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
@@ -122,8 +125,7 @@ public class ScheduleService {
                 locationAddress,
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
-                availableSlots
-        );
+                availableSlots);
     }
 
     /**
@@ -141,8 +143,7 @@ public class ScheduleService {
         // 3. Buscar todos los bookings con status CONFIRMED
         List<UserBooking> activeBookings = bookingRepository.findAllByScheduledClassIdAndStatus(
                 classId,
-                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED
-        );
+                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED);
 
         log.info("🚫 Class {} cancelled. Notifying {} users", classId, activeBookings.size());
 
@@ -153,16 +154,16 @@ public class ScheduleService {
             String message = String.format(
                     "La clase de %s programada para el %s ha sido cancelada. Por favor revisa tu agenda.",
                     scheduledClass.getName(),
-                    scheduledClass.getDateTime().format(formatter)
-            );
+                    scheduledClass.getDateTime().format(formatter));
 
             notificationService.createNotification(
                     booking.getUserId(),
                     Notification.NotificationType.BOOKING_CANCELLED,
                     title,
                     message,
-                    LocalDateTime.now(),  // Enviar inmediatamente
-                    booking.getId()
+                    LocalDateTime.now(), // Enviar inmediatamente
+                    booking.getId(),
+                    null // No scheduledClassId for cancellations
             );
         }
 
@@ -198,7 +199,8 @@ public class ScheduleService {
                 scheduledClass.setLocation(request.getNewLocation());
             }
             hasChanges = true;
-            if (changesDescription.length() > 0) changesDescription.append(". ");
+            if (changesDescription.length() > 0)
+                changesDescription.append(". ");
             changesDescription.append(String.format("Nueva sede: %s", request.getNewLocation()));
         }
 
@@ -211,8 +213,7 @@ public class ScheduleService {
         // 3. Buscar todos los bookings con status CONFIRMED
         List<UserBooking> activeBookings = bookingRepository.findAllByScheduledClassIdAndStatus(
                 classId,
-                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED
-        );
+                com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED);
 
         log.info("📝 Class {} updated. Notifying {} users", classId, activeBookings.size());
 
@@ -222,16 +223,16 @@ public class ScheduleService {
             String message = String.format(
                     "La clase de %s ha sido modificada. %s",
                     scheduledClass.getName(),
-                    changesDescription.toString()
-            );
+                    changesDescription.toString());
 
             notificationService.createNotification(
                     booking.getUserId(),
                     Notification.NotificationType.CLASS_CHANGED,
                     title,
                     message,
-                    LocalDateTime.now(),  // Enviar inmediatamente
-                    booking.getId()
+                    LocalDateTime.now(), // Enviar inmediatamente
+                    booking.getId(),
+                    null // No scheduledClassId for class changes
             );
         }
 

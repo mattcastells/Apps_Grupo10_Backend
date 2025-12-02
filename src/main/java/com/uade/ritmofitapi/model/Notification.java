@@ -57,6 +57,11 @@ public class Notification {
     private String bookingId;
 
     /**
+     * ID de la clase programada relacionada (opcional)
+     */
+    private String scheduledClassId;
+
+    /**
      * Fecha y hora programada para enviar la notificación
      */
     private LocalDateTime scheduledFor;
@@ -72,38 +77,41 @@ public class Notification {
     private LocalDateTime sentAt;
 
     /**
-     * Fecha y hora de lectura (cuando status = LEIDA)
+     * Fecha y hora de recepción (cuando status = RECIBIDA)
      */
-    private LocalDateTime readAt;
+    private LocalDateTime receivedAt;
 
     /**
      * Datos adicionales en formato JSON (opcional)
      */
     private String metadata;
 
-    public Notification(String userId, NotificationType type, String title, String message, LocalDateTime scheduledFor, String bookingId) {
+    public Notification(String userId, NotificationType type, String title, String message, LocalDateTime scheduledFor,
+            String bookingId, String scheduledClassId) {
         this.userId = userId;
         this.type = type;
         this.title = title;
         this.message = message;
         this.scheduledFor = scheduledFor;
         this.bookingId = bookingId;
+        this.scheduledClassId = scheduledClassId;
         this.status = NotificationStatus.PENDIENTE;
         this.createdAt = LocalDateTime.now();
     }
 
     public enum NotificationType {
-        BOOKING_REMINDER,       // Recordatorio 1h antes de la clase
-        BOOKING_CANCELLED,      // Clase cancelada
-        BOOKING_RESCHEDULED,    // Clase reprogramada
-        CLASS_CHANGED,          // Clase cambió sede/horario
-        REQUEST_RATING,         // Solicitud de calificación después de check-in
-        GENERAL                 // Notificación general
+        BOOKING_REMINDER, // Recordatorio 1h antes de la clase
+        BOOKING_CANCELLED, // Clase cancelada
+        BOOKING_RESCHEDULED, // Clase reprogramada
+        CLASS_CHANGED, // Clase cambió sede/horario
+        REQUEST_RATING, // Solicitud de calificación después de check-in
+        GENERAL // Notificación general
     }
 
     public enum NotificationStatus {
-        PENDIENTE,  // Creada, esperando ser enviada
-        ENVIADA,    // Mostrada al usuario
-        LEIDA       // Usuario la leyó/tocó
+        PENDIENTE, // Creada, esperando ser enviada
+        ENVIADA, // Enviada al dispositivo
+        RECIBIDA, // Usuario la recibió/vio
+        LEIDA // Estado legacy - mismo que RECIBIDA
     }
 }

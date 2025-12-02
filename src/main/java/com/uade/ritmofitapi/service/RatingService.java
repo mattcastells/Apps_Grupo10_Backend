@@ -30,7 +30,12 @@ public class RatingService {
             throw new RuntimeException("No tienes permiso para calificar esta reserva.");
         }
 
-        // Validar que la clase ya terminó (status ATTENDED o EXPIRED después de la fecha)
+        // Validar que el estado es ATTENDED (solo se pueden calificar clases a las que asistió)
+        if (booking.getStatus() != com.uade.ritmofitapi.model.booking.BookingStatus.ATTENDED) {
+            throw new RuntimeException("Solo puedes calificar clases a las que asististe. Debes hacer check-in para poder calificar.");
+        }
+
+        // Validar que la clase ya terminó
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime classEndTime = booking.getClassDateTime().plusMinutes(
                 booking.getDurationMinutes() != null ? booking.getDurationMinutes() : 60

@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface BookingRepository extends MongoRepository<UserBooking, String> {
     List<UserBooking> findAllByUserId(String userId);
     List<UserBooking> findAllByUserIdAndStatus(String userId, BookingStatus status);
+    List<UserBooking> findAllByStatus(BookingStatus status);
     Boolean existsByUserIdAndScheduledClassId(String userId, String scheduledClassId);
     Boolean existsByUserIdAndScheduledClassIdAndStatus(String userId, String scheduledClassId, BookingStatus status);
     List<UserBooking> findByUserIdAndClassDateTimeBetween(String userId, LocalDateTime start, LocalDateTime end);
