@@ -30,10 +30,12 @@ public class ScheduleService {
     }
 
     public List<ScheduledClassDto> getWeeklySchedule() {
-        LocalDateTime startOfWeek = LocalDate.now().atStartOfDay();
-        LocalDateTime endOfWeek = startOfWeek.plusDays(7);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endOfMonth = now.plusDays(30); // Mostrar próximos 30 días en lugar de solo 7
 
-        List<ScheduledClass> classes = scheduledClassRepository.findAllByDateTimeBetween(startOfWeek, endOfWeek);
+        log.info("🔍 Buscando clases entre {} y {}", now, endOfMonth);
+        List<ScheduledClass> classes = scheduledClassRepository.findAllByDateTimeBetween(now, endOfMonth);
+        log.info("✅ Encontradas {} clases en el rango", classes.size());
 
         return classes.stream()
                 .map(this::mapToDto)
