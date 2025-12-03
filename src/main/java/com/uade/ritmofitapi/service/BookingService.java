@@ -61,6 +61,11 @@ public class BookingService {
             throw new IllegalArgumentException("Debes reservar con al menos 1 hora de anticipación.");
         }
 
+        // VALIDACIÓN 2.5: El profesor no puede reservar su propia clase
+        if (scheduledClass.getProfessor() != null && scheduledClass.getProfessor().equalsIgnoreCase(user.getName())) {
+            throw new IllegalArgumentException("No podés reservar una clase dictada por vos.");
+        }
+
         // VALIDACIÓN 3: Verificar capacidad
         if (scheduledClass.getEnrolledCount() >= scheduledClass.getCapacity()) {
             throw new IllegalStateException("No hay cupos disponibles para esta clase.");
