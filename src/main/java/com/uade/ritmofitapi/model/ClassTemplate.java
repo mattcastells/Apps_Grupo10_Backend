@@ -21,6 +21,7 @@ public class ClassTemplate {
     private String professor;
     private DayOfWeek dayOfWeek;
     private LocalTime time;
+    private String description;
 
     @DBRef
     private Location location; // Cada pertenece a una sede
@@ -34,5 +35,6 @@ public class ClassTemplate {
         this.dayOfWeek = dayOfWeek;
         this.time = time;
         this.location = location;
+        this.description = null; // Se puede configurar después
     }
 }

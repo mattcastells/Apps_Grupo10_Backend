@@ -93,6 +93,7 @@ public class ScheduleService {
         scheduledClass.setLocation(location.getName());
         scheduledClass.setDateTime(dateTime);
         scheduledClass.setEnrolledCount(0);
+        scheduledClass.setDescription(request.getDescription());
         
         ScheduledClass saved = scheduledClassRepository.save(scheduledClass);
         log.info("💾 Clase guardada en BD con ID: {}", saved.getId());
@@ -159,6 +160,7 @@ public class ScheduleService {
         existingClass.setLocationId(request.getLocationId());
         existingClass.setLocation(location.getName());
         existingClass.setDateTime(dateTime);
+        existingClass.setDescription(request.getDescription());
         
         return scheduledClassRepository.save(existingClass);
     }
@@ -232,7 +234,8 @@ public class ScheduleService {
                 scheduledClass.getDateTime(),
                 scheduledClass.getDurationMinutes(),
                 availableSlots,
-                scheduledClass.getCapacity()
+                scheduledClass.getCapacity(),
+                scheduledClass.getDescription()
         );
     }
 }

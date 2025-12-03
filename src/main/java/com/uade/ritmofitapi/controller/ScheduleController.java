@@ -69,7 +69,8 @@ public class ScheduleController {
                 createdClass.getDateTime(),
                 createdClass.getDurationMinutes(),
                 createdClass.getCapacity() - createdClass.getEnrolledCount(),
-                createdClass.getCapacity()
+                createdClass.getCapacity(),
+                createdClass.getDescription()
         );
         
         return ResponseEntity.created(URI.create("/api/v1/schedule/" + createdClass.getId()))
@@ -96,7 +97,8 @@ public class ScheduleController {
                 updatedClass.getDateTime(),
                 updatedClass.getDurationMinutes(),
                 updatedClass.getCapacity() - updatedClass.getEnrolledCount(),
-                updatedClass.getCapacity()
+                updatedClass.getCapacity(),
+                updatedClass.getDescription()
         );
         
         return ResponseEntity.ok(responseDto);

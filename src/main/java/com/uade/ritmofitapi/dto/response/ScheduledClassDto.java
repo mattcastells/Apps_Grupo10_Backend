@@ -18,4 +18,5 @@ public class ScheduledClassDto {
     private Integer durationMinutes;
     private Integer availableSlots;
     private Integer capacity;
+    private String description;
 }

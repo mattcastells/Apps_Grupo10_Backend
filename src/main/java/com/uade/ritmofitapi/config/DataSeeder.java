@@ -160,14 +160,37 @@ public class DataSeeder implements CommandLineRunner {
     private void createClassTemplates(Location sedeBelgrano, Location sedePalermo, Location sedeCaballito) {
         List<ClassTemplate> templates = new ArrayList<>();
 
-        templates.add(new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.MONDAY, LocalTime.of(9, 0), sedeBelgrano));
-        templates.add(new ClassTemplate("Funcional Intenso", "Funcional", "Carlos Ruiz", 45, 15, DayOfWeek.WEDNESDAY, LocalTime.of(18, 30), sedeCaballito));
-        templates.add(new ClassTemplate("Spinning de Alta Intensidad", "Spinning", "Jorge Franco", 45, 15, DayOfWeek.TUESDAY, LocalTime.of(10, 0), sedePalermo));
-        templates.add(new ClassTemplate("Boxeo Recreativo", "Boxeo", "Pablo Pujol", 75, 12, DayOfWeek.FRIDAY, LocalTime.of(20, 0), sedeBelgrano));
-        templates.add(new ClassTemplate("Pilates Reformer", "Pilates", "Sofía Gómez", 50, 10, DayOfWeek.THURSDAY, LocalTime.of(17, 0), sedePalermo));
-        templates.add(new ClassTemplate("Zumba Party", "Zumba", "Valentina Díaz", 60, 25, DayOfWeek.SATURDAY, LocalTime.of(11, 0), sedeCaballito));
-        templates.add(new ClassTemplate("CrossFit Avanzado", "CrossFit", "Martín Herrera", 50, 18, DayOfWeek.TUESDAY, LocalTime.of(7, 30), sedeBelgrano));
-        templates.add(new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.THURSDAY, LocalTime.of(19, 0), sedeBelgrano));
+        ClassTemplate yoga1 = new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.MONDAY, LocalTime.of(9, 0), sedeBelgrano);
+        yoga1.setDescription("Clase de yoga enfocada en respiración, estiramientos y posturas. Ideal para mejorar la flexibilidad, reducir el estrés y encontrar equilibrio mental y físico.");
+        templates.add(yoga1);
+        
+        ClassTemplate funcional = new ClassTemplate("Funcional Intenso", "Funcional", "Carlos Ruiz", 45, 15, DayOfWeek.WEDNESDAY, LocalTime.of(18, 30), sedeCaballito);
+        funcional.setDescription("Entrenamiento funcional de alta intensidad que combina ejercicios cardiovasculares y de fuerza. Mejora tu resistencia, fuerza y agilidad con movimientos naturales del cuerpo.");
+        templates.add(funcional);
+        
+        ClassTemplate spinning = new ClassTemplate("Spinning de Alta Intensidad", "Spinning", "Jorge Franco", 45, 15, DayOfWeek.TUESDAY, LocalTime.of(10, 0), sedePalermo);
+        spinning.setDescription("Clase de ciclismo indoor de alta energía. Quemá calorías mientras mejorás tu resistencia cardiovascular al ritmo de la música.");
+        templates.add(spinning);
+        
+        ClassTemplate boxeo = new ClassTemplate("Boxeo Recreativo", "Boxeo", "Pablo Pujol", 75, 12, DayOfWeek.FRIDAY, LocalTime.of(20, 0), sedeBelgrano);
+        boxeo.setDescription("Clase de boxeo que combina técnicas de golpeo con acondicionamiento físico. Mejorá tu coordinación, fuerza y resistencia mientras liberás tensiones.");
+        templates.add(boxeo);
+        
+        ClassTemplate pilates = new ClassTemplate("Pilates Reformer", "Pilates", "Sofía Gómez", 50, 10, DayOfWeek.THURSDAY, LocalTime.of(17, 0), sedePalermo);
+        pilates.setDescription("Entrenamiento de Pilates centrado en el fortalecimiento del core, mejora de la postura y control corporal. Ejercicios de bajo impacto con gran efectividad.");
+        templates.add(pilates);
+        
+        ClassTemplate zumba = new ClassTemplate("Zumba Party", "Zumba", "Valentina Díaz", 60, 25, DayOfWeek.SATURDAY, LocalTime.of(11, 0), sedeCaballito);
+        zumba.setDescription("Clase de baile fitness que combina ritmos latinos con ejercicios aeróbicos. ¡Divertite mientras te ponés en forma!");
+        templates.add(zumba);
+        
+        ClassTemplate crossfit = new ClassTemplate("CrossFit Avanzado", "CrossFit", "Martín Herrera", 50, 18, DayOfWeek.TUESDAY, LocalTime.of(7, 30), sedeBelgrano);
+        crossfit.setDescription("Entrenamiento de alta intensidad que combina levantamiento de pesas, gimnasia y cardio. Desarrollá fuerza, potencia y resistencia en cada sesión.");
+        templates.add(crossfit);
+        
+        ClassTemplate yoga2 = new ClassTemplate("Yoga", "Yoga", "Ana López", 60, 20, DayOfWeek.THURSDAY, LocalTime.of(19, 0), sedeBelgrano);
+        yoga2.setDescription("Clase de yoga enfocada en respiración, estiramientos y posturas. Ideal para mejorar la flexibilidad, reducir el estrés y encontrar equilibrio mental y físico.");
+        templates.add(yoga2);
 
         classTemplateRepository.saveAll(templates);
     }

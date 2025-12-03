@@ -23,4 +23,6 @@ public class CreateScheduledClassRequest {
     
     @NotBlank(message = "La fecha y hora son obligatorias (formato ISO: yyyy-MM-dd'T'HH:mm:ss)")
     private String dateTime; // Format: yyyy-MM-dd'T'HH:mm:ss
+    
+    private String description; // Opcional
 }

@@ -21,6 +21,7 @@ public class ScheduledClass {
     private String professor;
     private Integer durationMinutes;
     private String location;
+    private String description;
 
     private Integer enrolledCount = 0;
 
@@ -34,6 +35,7 @@ public class ScheduledClass {
         this.capacity = template.getCapacity();
         this.discipline = template.getDiscipline();
         this.location = template.getLocation() != null ? template.getLocation().getName() : null;
+        this.description = template.getDescription();
         this.dateTime = dateTime;
         this.enrolledCount = 0;
     }
