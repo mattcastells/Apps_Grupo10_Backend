@@ -20,6 +20,20 @@ public class ClassTemplateService {
     }
 
     public ClassTemplate createClassTemplate(CreateClassTemplateRequest request) {
+        // Validaciones
+        if (request.getCapacity() != null && request.getCapacity() > 30) {
+            throw new IllegalArgumentException("La clase no puede tener más de 30 cupos");
+        }
+        if (request.getDurationMinutes() != null && request.getDurationMinutes() > 120) {
+            throw new IllegalArgumentException("La duración no puede ser mayor a 120 minutos");
+        }
+        if (request.getCapacity() != null && request.getCapacity() <= 0) {
+            throw new IllegalArgumentException("Los cupos deben ser mayor a 0");
+        }
+        if (request.getDurationMinutes() != null && request.getDurationMinutes() <= 0) {
+            throw new IllegalArgumentException("La duración debe ser mayor a 0");
+        }
+
         // 1. Mapeo del DTO a la entidad de dominio
         ClassTemplate classTemplate = new ClassTemplate();
         classTemplate.setName(request.getName());
