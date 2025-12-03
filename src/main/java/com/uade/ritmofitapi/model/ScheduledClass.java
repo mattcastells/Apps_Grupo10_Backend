@@ -24,6 +24,7 @@ public class ScheduledClass {
     private String description;
 
     private Integer enrolledCount = 0;
+    private Boolean cancelled = false;
 
     public ScheduledClass(ClassTemplate template, LocalDateTime dateTime) {
         this.templateId = template.getId();

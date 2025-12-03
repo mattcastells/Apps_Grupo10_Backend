@@ -45,19 +45,28 @@ public class HistoryService {
         
         log.info("Found {} bookings in date range for user {}", bookings.size(), userId);
         
-        // Filter bookings for past classes with attendance status
-        // Valid statuses: CONFIRMED, EXPIRED (not yet marked), ATTENDED (presente), ABSENT (ausente)
+        // Filter bookings for history
+        // ATTENDED y ABSENT siempre se muestran (ya hiciste check-in o faltaste)
+        // CANCELLED siempre se muestra
+        // CONFIRMED y EXPIRED solo si la clase ya pasó
         List<UserBooking> pastBookings = bookings.stream()
             .filter(booking -> {
-                boolean isValidStatus = booking.getStatus() == BookingStatus.CONFIRMED 
-                                     || booking.getStatus() == BookingStatus.EXPIRED
-                                     || booking.getStatus() == BookingStatus.ATTENDED
-                                     || booking.getStatus() == BookingStatus.ABSENT;
+                BookingStatus status = booking.getStatus();
                 boolean isPast = booking.getClassDateTime().isBefore(LocalDateTime.now());
-                log.info("Booking {}: class={}, dateTime={}, status={}, isPast={}, isValidStatus={}", 
-                    booking.getId(), booking.getClassName(), booking.getClassDateTime(), 
-                    booking.getStatus(), isPast, isValidStatus);
-                return isValidStatus && isPast;
+
+                // ATTENDED, ABSENT, CANCELLED siempre se muestran
+                boolean alwaysShow = status == BookingStatus.ATTENDED
+                                  || status == BookingStatus.ABSENT
+                                  || status == BookingStatus.CANCELLED;
+
+                // CONFIRMED, EXPIRED solo si ya pasó la clase
+                boolean showIfPast = (status == BookingStatus.CONFIRMED || status == BookingStatus.EXPIRED) && isPast;
+
+                log.info("Booking {}: class={}, dateTime={}, status={}, isPast={}, show={}",
+                    booking.getId(), booking.getClassName(), booking.getClassDateTime(),
+                    status, isPast, (alwaysShow || showIfPast));
+
+                return alwaysShow || showIfPast;
             })
             .collect(Collectors.toList());
         
@@ -82,7 +91,8 @@ public class HistoryService {
         HistoryItemResponse response = new HistoryItemResponse();
         response.setId(booking.getId());
         response.setDiscipline(booking.getClassName());
-        
+        response.setStatus(booking.getStatus().name()); // ATTENDED, ABSENT, etc.
+
         // Obtener datos de la clase programada
         ScheduledClass scheduledClass = scheduledClassRepository.findById(booking.getScheduledClassId()).orElse(null);
         if (scheduledClass != null) {
@@ -96,9 +106,9 @@ public class HistoryService {
             response.setSite(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
             response.setLocation(booking.getLocation() != null ? booking.getLocation() : "Sede Centro");
         }
-        
+
         response.setStartDateTime(booking.getClassDateTime().format(dateTimeFormatter));
-        
+
         return response;
     }
 

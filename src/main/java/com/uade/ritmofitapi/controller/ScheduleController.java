@@ -1,6 +1,7 @@
 package com.uade.ritmofitapi.controller;
 
 import com.uade.ritmofitapi.dto.request.CreateScheduledClassRequest;
+import com.uade.ritmofitapi.dto.request.UpdateScheduledClassRequest;
 import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
 import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.service.ScheduleService;
@@ -54,13 +55,13 @@ public class ScheduleController {
         ScheduledClassDto classDetail = scheduleService.getClassDetail(classId);
         return ResponseEntity.ok(classDetail);
     }
-    
+
     @PostMapping
     public ResponseEntity<ScheduledClassDto> createScheduledClass(@Valid @RequestBody CreateScheduledClassRequest request) {
         log.info("📥 Recibiendo solicitud de creación de clase: {}", request);
         ScheduledClass createdClass = scheduleService.createScheduledClass(request);
         log.info("✅ Clase creada exitosamente con ID: {}", createdClass.getId());
-        
+
         ScheduledClassDto responseDto = new ScheduledClassDto(
                 createdClass.getId(),
                 createdClass.getProfessor(),
@@ -72,23 +73,23 @@ public class ScheduleController {
                 createdClass.getCapacity(),
                 createdClass.getDescription()
         );
-        
+
         return ResponseEntity.created(URI.create("/api/v1/schedule/" + createdClass.getId()))
                 .body(responseDto);
     }
-    
+
     @GetMapping("/professor/{professorName}")
     public ResponseEntity<List<ScheduledClassDto>> getClassesByProfessor(@PathVariable String professorName) {
         List<ScheduledClassDto> classes = scheduleService.getClassesByProfessor(professorName);
         return ResponseEntity.ok(classes);
     }
-    
+
     @PutMapping("/{classId}")
     public ResponseEntity<ScheduledClassDto> updateScheduledClass(
             @PathVariable String classId,
             @Valid @RequestBody CreateScheduledClassRequest request) {
         ScheduledClass updatedClass = scheduleService.updateScheduledClass(classId, request);
-        
+
         ScheduledClassDto responseDto = new ScheduledClassDto(
                 updatedClass.getId(),
                 updatedClass.getProfessor(),
@@ -100,13 +101,36 @@ public class ScheduleController {
                 updatedClass.getCapacity(),
                 updatedClass.getDescription()
         );
-        
+
         return ResponseEntity.ok(responseDto);
     }
-    
+
     @DeleteMapping("/{classId}")
     public ResponseEntity<Void> deleteScheduledClass(@PathVariable String classId) {
         scheduleService.deleteScheduledClass(classId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Cancelar una clase programada (solo admin via Postman)
+     * POST /api/v1/schedule/{classId}/cancel
+     */
+    @PostMapping("/{classId}/cancel")
+    public ResponseEntity<ScheduledClass> cancelClass(@PathVariable String classId) {
+        ScheduledClass cancelled = scheduleService.cancelClass(classId);
+        return ResponseEntity.ok(cancelled);
+    }
+
+    /**
+     * Actualizar horario/sede de una clase y notificar usuarios (solo admin via Postman)
+     * PUT /api/v1/schedule/{classId}/schedule
+     */
+    @PutMapping("/{classId}/schedule")
+    public ResponseEntity<ScheduledClass> updateClassSchedule(
+            @PathVariable String classId,
+            @RequestBody UpdateScheduledClassRequest request
+    ) {
+        ScheduledClass updated = scheduleService.updateClass(classId, request);
+        return ResponseEntity.ok(updated);
     }
 }
