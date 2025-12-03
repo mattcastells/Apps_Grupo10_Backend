@@ -94,6 +94,7 @@ public class UserService {
         r.setAge(u.getAge());
         r.setGender(u.getGender());
         r.setProfilePicture(u.getProfilePicture());
+        r.setRole(u.getRole());
         // r.setPassword(null); // por seguridad lo dejamos null/omitido
         return r;
     }

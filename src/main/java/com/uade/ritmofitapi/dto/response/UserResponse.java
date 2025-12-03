@@ -10,6 +10,6 @@ public class UserResponse {
     private Integer age;
     private String gender;
     private String profilePicture;
-    // Campo presente en el front; lo dejamos nulo para no exponer secretos
+    private String role;
     private String password;
 }

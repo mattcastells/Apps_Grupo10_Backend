@@ -25,6 +25,7 @@ public class User implements UserDetails {
     private String gender;
     private String profilePicture;
     private boolean isVerified = false;
+    private String role = "USER"; // USER or PROFESSOR
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime lastLogin;
 

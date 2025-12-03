@@ -1,12 +1,18 @@
 package com.uade.ritmofitapi.controller;
 
+import com.uade.ritmofitapi.dto.request.CreateScheduledClassRequest;
 import com.uade.ritmofitapi.dto.response.ScheduledClassDto;
+import com.uade.ritmofitapi.model.ScheduledClass;
 import com.uade.ritmofitapi.service.ScheduleService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
+import java.net.URI;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/schedule")
 public class ScheduleController {
@@ -47,5 +53,58 @@ public class ScheduleController {
     public ResponseEntity<ScheduledClassDto> getClassDetail(@PathVariable String classId) {
         ScheduledClassDto classDetail = scheduleService.getClassDetail(classId);
         return ResponseEntity.ok(classDetail);
+    }
+    
+    @PostMapping
+    public ResponseEntity<ScheduledClassDto> createScheduledClass(@Valid @RequestBody CreateScheduledClassRequest request) {
+        log.info("📥 Recibiendo solicitud de creación de clase: {}", request);
+        ScheduledClass createdClass = scheduleService.createScheduledClass(request);
+        log.info("✅ Clase creada exitosamente con ID: {}", createdClass.getId());
+        
+        ScheduledClassDto responseDto = new ScheduledClassDto(
+                createdClass.getId(),
+                createdClass.getProfessor(),
+                createdClass.getDiscipline(),
+                createdClass.getLocation(),
+                createdClass.getDateTime(),
+                createdClass.getDurationMinutes(),
+                createdClass.getCapacity() - createdClass.getEnrolledCount(),
+                createdClass.getCapacity()
+        );
+        
+        return ResponseEntity.created(URI.create("/api/v1/schedule/" + createdClass.getId()))
+                .body(responseDto);
+    }
+    
+    @GetMapping("/professor/{professorName}")
+    public ResponseEntity<List<ScheduledClassDto>> getClassesByProfessor(@PathVariable String professorName) {
+        List<ScheduledClassDto> classes = scheduleService.getClassesByProfessor(professorName);
+        return ResponseEntity.ok(classes);
+    }
+    
+    @PutMapping("/{classId}")
+    public ResponseEntity<ScheduledClassDto> updateScheduledClass(
+            @PathVariable String classId,
+            @Valid @RequestBody CreateScheduledClassRequest request) {
+        ScheduledClass updatedClass = scheduleService.updateScheduledClass(classId, request);
+        
+        ScheduledClassDto responseDto = new ScheduledClassDto(
+                updatedClass.getId(),
+                updatedClass.getProfessor(),
+                updatedClass.getDiscipline(),
+                updatedClass.getLocation(),
+                updatedClass.getDateTime(),
+                updatedClass.getDurationMinutes(),
+                updatedClass.getCapacity() - updatedClass.getEnrolledCount(),
+                updatedClass.getCapacity()
+        );
+        
+        return ResponseEntity.ok(responseDto);
+    }
+    
+    @DeleteMapping("/{classId}")
+    public ResponseEntity<Void> deleteScheduledClass(@PathVariable String classId) {
+        scheduleService.deleteScheduledClass(classId);
+        return ResponseEntity.noContent().build();
     }
 }

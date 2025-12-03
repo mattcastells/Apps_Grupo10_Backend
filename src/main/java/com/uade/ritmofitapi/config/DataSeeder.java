@@ -33,7 +33,7 @@ import java.util.Collections;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final Boolean skip = true;
+    private final Boolean skip = false;
     private final UserRepository userRepository;
     private final ClassTemplateRepository classTemplateRepository;
     private final ScheduledClassRepository scheduledClassRepository;
@@ -92,8 +92,12 @@ public class DataSeeder implements CommandLineRunner {
         User user2 = new User("Franco", "franco@uade.edu.ar", "12345678", 29, "Masculino");
         User user3 = new User("Horacio", "horacio@uade.edu.ar", "12345678", 37, "Masculino");
         User user4 = new User("Antonio", "antonio@uade.edu.ar", "12345678", 24, "Masculino");
+        
+        // Create professor user
+        User professor = new User("Profesor", "profesor@uade.edu.ar", "12345678", 35, "Masculino");
+        professor.setRole("PROFESSOR");
 
-        List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4));
+        List<User> users = new ArrayList<>(List.of(user1, user2, user3, user4, professor));
 
         // Hashear passwords y marcar como verificados
         for (User user : users) {
