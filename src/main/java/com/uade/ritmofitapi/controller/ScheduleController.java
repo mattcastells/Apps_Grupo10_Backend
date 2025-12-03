@@ -67,6 +67,7 @@ public class ScheduleController {
                 createdClass.getProfessor(),
                 createdClass.getDiscipline(),
                 createdClass.getLocation(),
+                null, // locationAddress - not stored in ScheduledClass model
                 createdClass.getDateTime(),
                 createdClass.getDurationMinutes(),
                 createdClass.getCapacity() - createdClass.getEnrolledCount(),
@@ -95,6 +96,7 @@ public class ScheduleController {
                 updatedClass.getProfessor(),
                 updatedClass.getDiscipline(),
                 updatedClass.getLocation(),
+                null, // locationAddress - not stored in ScheduledClass model
                 updatedClass.getDateTime(),
                 updatedClass.getDurationMinutes(),
                 updatedClass.getCapacity() - updatedClass.getEnrolledCount(),
