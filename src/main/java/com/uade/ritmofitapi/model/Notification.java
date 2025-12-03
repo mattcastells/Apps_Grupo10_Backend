@@ -109,9 +109,8 @@ public class Notification {
     }
 
     public enum NotificationStatus {
-        PENDIENTE, // Creada, esperando ser enviada
-        ENVIADA, // Enviada al dispositivo
-        RECIBIDA, // Usuario la recibió/vio
-        LEIDA // Estado legacy - mismo que RECIBIDA
+        PENDIENTE, // Creada, esperando ser enviada (scheduledFor en el futuro)
+        ENVIADA, // El scheduler la marcó como lista para mostrar
+        LEIDA // Usuario hizo click en la notificación
     }
 }

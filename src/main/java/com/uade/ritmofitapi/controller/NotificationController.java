@@ -85,15 +85,16 @@ public class NotificationController {
     }
 
     /**
-     * PUT /api/v1/notifications/{id}/received
-     * Marcar notificación como recibida (usuario la vio/interactuó)
+     * PUT /api/v1/notifications/{id}/read
+     * Marcar notificación como leída (usuario hizo click en ella)
      */
-    @PutMapping("/{id}/received")
-    public ResponseEntity<Notification> markAsReceived(
+    @PutMapping("/{id}/read")
+    public ResponseEntity<Notification> markAsRead(
             @PathVariable String id,
             Authentication authentication) {
+        String userId = authentication.getName();
         // TODO: Verificar que la notificación pertenece al usuario autenticado
-        Notification updated = notificationService.markAsReceived(id);
+        Notification updated = notificationService.markAsRead(id);
         return ResponseEntity.ok(updated);
     }
 

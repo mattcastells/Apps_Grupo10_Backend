@@ -36,7 +36,7 @@ public class NotificationScheduler {
      * 0 0/15 * * * * = cada 15 minutos
      */
     @Scheduled(cron = "0 0/15 * * * *")
-    public void processPendingNotifications() {
+    public synchronized void processPendingNotifications() {
         log.info("🔄 [SCHEDULER] Processing pending notifications...");
 
         List<Notification> pendingNotifications = notificationService.getPendingNotificationsToProcess();
@@ -87,7 +87,7 @@ public class NotificationScheduler {
      * Marca como ABSENT las reservas CONFIRMED cuya clase ya finalizó
      */
     @Scheduled(cron = "0 0/15 * * * *")
-    public void markAbsentBookings() {
+    public synchronized void markAbsentBookings() {
         log.info("🔄 [SCHEDULER] Checking for absent bookings...");
 
         LocalDateTime now = LocalDateTime.now();
@@ -105,31 +105,38 @@ public class NotificationScheduler {
             // Si la clase ya terminó, marcar como ABSENT
             if (now.isAfter(classEnd)) {
                 try {
+                    // Verificar de nuevo el estado antes de procesar (evitar race conditions)
+                    UserBooking freshBooking = bookingRepository.findById(booking.getId()).orElse(null);
+                    if (freshBooking == null || freshBooking.getStatus() != BookingStatus.CONFIRMED) {
+                        log.debug("Booking {} ya fue procesado, saltando...", booking.getId());
+                        continue;
+                    }
+
                     // Marcar como ABSENT
-                    booking.setStatus(BookingStatus.ABSENT);
-                    bookingRepository.save(booking);
+                    freshBooking.setStatus(BookingStatus.ABSENT);
+                    bookingRepository.save(freshBooking);
 
                     // Crear notificación de ausencia
                     String title = "😢 Te extrañamos en tu clase";
                     String message = String.format("¿Qué pasó que no asististe a la clase de %s?",
-                            booking.getClassName());
+                            freshBooking.getClassName());
 
                     notificationService.createNotification(
-                            booking.getUserId(),
+                            freshBooking.getUserId(),
                             Notification.NotificationType.GENERAL,
                             title,
                             message,
                             LocalDateTime.now(), // Enviar inmediatamente
-                            booking.getId(),
-                            booking.getScheduledClassId()
+                            freshBooking.getId(),
+                            freshBooking.getScheduledClassId()
                     );
 
                     absentCount++;
 
                     log.info("❌ [SCHEDULER] Marked booking {} as ABSENT for user {} - Class: {}",
-                            booking.getId(),
-                            booking.getUserId(),
-                            booking.getClassName()
+                            freshBooking.getId(),
+                            freshBooking.getUserId(),
+                            freshBooking.getClassName()
                     );
 
                 } catch (Exception e) {

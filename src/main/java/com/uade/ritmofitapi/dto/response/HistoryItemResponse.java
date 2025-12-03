@@ -11,4 +11,5 @@ public class HistoryItemResponse {
     private String location;
     private String startDateTime; // ISO-8601 format
     private int durationMinutes;
+    private String status; // ATTENDED, ABSENT, CANCELLED, CONFIRMED, EXPIRED
 }

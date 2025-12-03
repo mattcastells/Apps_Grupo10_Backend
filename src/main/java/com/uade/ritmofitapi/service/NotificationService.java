@@ -70,16 +70,16 @@ public class NotificationService {
     }
 
     /**
-     * Marcar notificación como recibida (usuario la vio/clickeó/tocó)
+     * Marcar notificación como leída (usuario hizo click en ella)
      */
-    public Notification markAsReceived(String notificationId) {
+    public Notification markAsRead(String notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
-        notification.setStatus(Notification.NotificationStatus.RECIBIDA);
+        notification.setStatus(Notification.NotificationStatus.LEIDA);
         notification.setReceivedAt(LocalDateTime.now());
 
-        log.info("✅ Notification {} marked as RECEIVED by user", notificationId);
+        log.info("✅ Notification {} marked as READ by user", notificationId);
         return notificationRepository.save(notification);
     }
 
