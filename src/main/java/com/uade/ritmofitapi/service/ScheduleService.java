@@ -41,7 +41,7 @@ public class ScheduleService {
 
     public List<ScheduledClassDto> getWeeklySchedule() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endOfMonth = now.plusDays(30); // Mostrar próximos 30 días en lugar de solo 7
+        LocalDateTime endOfMonth = now.plusDays(30);
 
         log.info("🔍 Buscando clases entre {} y {}", now, endOfMonth);
         List<ScheduledClass> classes = scheduledClassRepository.findAllByDateTimeBetween(now, endOfMonth);
@@ -56,20 +56,15 @@ public class ScheduleService {
         log.info("🔧 Creando clase programada: discipline={}, professor={}, date={}",
                 request.getDiscipline(), request.getProfessor(), request.getDateTime());
 
-        // Parse datetime
         LocalDateTime dateTime = LocalDateTime.parse(request.getDateTime());
         log.info("📅 Fecha parseada: {}", dateTime);
         
-        // Validate minimum 1 hour separation between classes for the same professor
-        // The new class cannot start until 1 hour after any existing class starts
+        // Validate minimum 1 hour separation
         boolean hasConflict = scheduledClassRepository.findAll().stream()
                 .filter(c -> c.getProfessor() != null && c.getProfessor().equalsIgnoreCase(request.getProfessor()))
                 .anyMatch(existingClass -> {
                     LocalDateTime existingStart = existingClass.getDateTime();
-                    
-                    // Calculate absolute difference in hours between start times
                     long hoursDiff = Math.abs(java.time.Duration.between(existingStart, dateTime).toHours());
-                    
                     boolean tooClose = hoursDiff < 1;
                     
                     if (tooClose) {
@@ -85,7 +80,6 @@ public class ScheduleService {
             throw new RuntimeException("Ya tenés una clase programada dentro del bloque de 1 hora. Debe haber al menos 1 hora de separación entre los horarios de inicio.");
         }
         
-        // Get location
         Location location = locationRepository.findById(request.getLocationId())
                 .orElseThrow(() -> {
                     log.error("❌ Sede no encontrada con ID: {}", request.getLocationId());
@@ -93,8 +87,8 @@ public class ScheduleService {
                 });
         log.info("📍 Sede encontrada: {}", location.getName());
         
-        // Create scheduled class
         ScheduledClass scheduledClass = new ScheduledClass();
+        scheduledClass.setName(request.getDiscipline() + " con " + request.getProfessor());
         scheduledClass.setDiscipline(request.getDiscipline());
         scheduledClass.setProfessor(request.getProfessor());
         scheduledClass.setDurationMinutes(request.getDurationMinutes());
@@ -111,7 +105,6 @@ public class ScheduleService {
     }
     
     public List<ScheduledClassDto> getClassesByProfessor(String professorName) {
-        // Get all future classes for this professor
         LocalDateTime now = LocalDateTime.now();
         List<ScheduledClass> classes = scheduledClassRepository.findAll().stream()
                 .filter(c -> c.getProfessor() != null && c.getProfessor().equalsIgnoreCase(professorName))
@@ -125,58 +118,85 @@ public class ScheduleService {
     }
     
     public ScheduledClass updateScheduledClass(String classId, CreateScheduledClassRequest request) {
-        // Find existing class
         ScheduledClass existingClass = scheduledClassRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Clase no encontrada con ID: " + classId));
 
+        LocalDateTime dateTime = LocalDateTime.parse(request.getDateTime());
+        
+        // Validate minimum 1 hour separation (excluding current class)
+        boolean hasConflict = scheduledClassRepository.findAll().stream()
+                .filter(c -> !c.getId().equals(classId))
+                .filter(c -> c.getProfessor() != null && c.getProfessor().equalsIgnoreCase(request.getProfessor()))
+                .anyMatch(existingOtherClass -> {
+                    LocalDateTime existingStart = existingOtherClass.getDateTime();
+                    long hoursDiff = Math.abs(java.time.Duration.between(existingStart, dateTime).toHours());
+                    boolean tooClose = hoursDiff < 1;
+                    
+                    if (tooClose) {
+                        log.warn("⚠️ Conflicto detectado con clase existente ID: {} (inicia: {}). Clase editada: {}. Diferencia: {} horas", 
+                                existingOtherClass.getId(), existingStart, dateTime, hoursDiff);
+                    }
+                    
+                    return tooClose;
+                });
+        
+        if (hasConflict) {
+            log.error("❌ El profesor {} ya tiene una clase dentro del bloque de 1 hora", request.getProfessor());
+            throw new RuntimeException("Ya tenés una clase programada dentro del bloque de 1 hora. Debe haber al menos 1 hora de separación entre los horarios de inicio.");
+        }
+        
+        Location location = locationRepository.findById(request.getLocationId())
+                .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getLocationId()));
+
+        // Track changes for notifications
         StringBuilder changesDescription = new StringBuilder();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        boolean hasChanges = false;
 
-        LocalDateTime newDateTime = LocalDateTime.parse(request.getDateTime());
-        if (!Objects.equals(existingClass.getDateTime(), newDateTime)) {
-            changesDescription.append(String.format("Nuevo horario: %s. ", newDateTime.format(formatter)));
-            existingClass.setDateTime(newDateTime);
+        if (!Objects.equals(existingClass.getDateTime(), dateTime)) {
+            changesDescription.append(String.format("Nuevo horario: %s. ", dateTime.format(formatter)));
+            hasChanges = true;
+        }
+
+        if (!Objects.equals(existingClass.getLocationId(), request.getLocationId())) {
+            changesDescription.append(String.format("Nueva sede: %s. ", location.getName()));
+            hasChanges = true;
         }
 
         if (!Objects.equals(existingClass.getDiscipline(), request.getDiscipline())) {
             changesDescription.append(String.format("Nueva disciplina: %s. ", request.getDiscipline()));
-            existingClass.setDiscipline(request.getDiscipline());
+            hasChanges = true;
         }
 
         if (!Objects.equals(existingClass.getProfessor(), request.getProfessor())) {
             changesDescription.append(String.format("Nuevo profesor: %s. ", request.getProfessor()));
-            existingClass.setProfessor(request.getProfessor());
+            hasChanges = true;
         }
 
         if (!Objects.equals(existingClass.getDurationMinutes(), request.getDurationMinutes())) {
             changesDescription.append(String.format("Nueva duración: %d minutos. ", request.getDurationMinutes()));
-            existingClass.setDurationMinutes(request.getDurationMinutes());
+            hasChanges = true;
         }
 
-        if (!Objects.equals(existingClass.getCapacity(), request.getCapacity())) {
-            changesDescription.append(String.format("Nueva capacidad: %d. ", request.getCapacity()));
-            existingClass.setCapacity(request.getCapacity());
-        }
+        // Update all fields
+        existingClass.setName(request.getDiscipline() + " con " + request.getProfessor());
+        existingClass.setDiscipline(request.getDiscipline());
+        existingClass.setProfessor(request.getProfessor());
+        existingClass.setDurationMinutes(request.getDurationMinutes());
+        existingClass.setCapacity(request.getCapacity());
+        existingClass.setLocationId(request.getLocationId());
+        existingClass.setLocation(location.getName());
+        existingClass.setDateTime(dateTime);
+        existingClass.setDescription(request.getDescription());
+        
+        ScheduledClass saved = scheduledClassRepository.save(existingClass);
 
-        if (!Objects.equals(existingClass.getLocationId(), request.getLocationId())) {
-            Location location = locationRepository.findById(request.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getLocationId()));
-            changesDescription.append(String.format("Nueva sede: %s. ", location.getName()));
-            existingClass.setLocationId(request.getLocationId());
-            existingClass.setLocation(location.getName());
-        }
-
-        if (!Objects.equals(existingClass.getDescription(), request.getDescription())) {
-            changesDescription.append("Descripción actualizada. ");
-            existingClass.setDescription(request.getDescription());
-        }
-
-        if (changesDescription.length() > 0) {
-            scheduledClassRepository.save(existingClass);
+        // Send notifications if there are significant changes
+        if (hasChanges) {
             List<UserBooking> activeBookings = bookingRepository.findAllByScheduledClassIdAndStatus(
                     classId, com.uade.ritmofitapi.model.booking.BookingStatus.CONFIRMED);
 
-            log.info("📝 Class {} updated. Notifying {} users", classId, activeBookings.size());
+            log.info("📝 Class {} updated. Notifying {} users about changes", classId, activeBookings.size());
 
             for (UserBooking booking : activeBookings) {
                 String title = "⚠️ Cambio en tu Clase";
@@ -197,7 +217,14 @@ public class ScheduleService {
             }
         }
 
-        return existingClass;
+        return saved;
+    }
+    
+    public void deleteScheduledClass(String classId) {
+        ScheduledClass existingClass = scheduledClassRepository.findById(classId)
+                .orElseThrow(() -> new RuntimeException("Clase no encontrada con ID: " + classId));
+        
+        scheduledClassRepository.delete(existingClass);
     }
 
     public ScheduledClassDto getClassDetail(String classId) {
@@ -210,8 +237,7 @@ public class ScheduleService {
         return mapToDto(scheduledClass.get());
     }
 
-    public List<ScheduledClassDto> getFilteredSchedule(String locationId, String discipline, String fromDate,
-                                                       String toDate) {
+    public List<ScheduledClassDto> getFilteredSchedule(String locationId, String discipline, String fromDate, String toDate) {
         LocalDateTime startDate = LocalDate.now().atStartOfDay();
         LocalDateTime endDate = startDate.plusDays(30);
 
@@ -235,8 +261,7 @@ public class ScheduleService {
 
         return classes.stream()
                 .filter(c -> locationId == null || locationId.isBlank() || locationId.equals(c.getLocationId()))
-                .filter(c -> discipline == null || discipline.isBlank()
-                        || discipline.equalsIgnoreCase(c.getDiscipline()))
+                .filter(c -> discipline == null || discipline.isBlank() || discipline.equalsIgnoreCase(c.getDiscipline()))
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
