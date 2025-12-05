@@ -153,6 +153,9 @@ public class DataSeeder implements CommandLineRunner {
         createClassWithoutRatingMocked();
         log.info("-> Clase sin reseña mock creada.");
 
+        // --- Create Dynamic Classes (start in 1 hour and 3 minutes) ---
+        createDynamicClasses();
+        log.info("-> Clases dinámicas creadas (comienzan en 1 hora y 3 minutos).");
 
         log.info("===== DATOS MOCK CARGADOS CORRECTAMENTE =====");
     }
@@ -412,5 +415,97 @@ public class DataSeeder implements CommandLineRunner {
         booking = bookingRepository.save(booking);
         log.info("Booking creado (sin reseña) para usuario {}: {} - Clase terminó hace 1 hora", user.getEmail(), booking.getId());
         log.info("Esta clase puede ser calificada desde la app (dentro de las 24 horas)");
+    }
+
+    private void createDynamicClasses() {
+        // Calcular la fecha/hora de inicio: 1 hora y 3 minutos desde ahora
+        LocalDateTime startTime = LocalDateTime.now().plusHours(1).plusMinutes(7);
+
+        // Obtener todas las locaciones y templates disponibles
+        List<Location> locations = locationRepository.findAll();
+        List<ClassTemplate> templates = classTemplateRepository.findAll();
+
+        if (locations.isEmpty() || templates.isEmpty()) {
+            log.warn("No hay locaciones o plantillas disponibles para crear clases dinámicas");
+            return;
+        }
+
+        // Crear varias clases dinámicas para diferentes disciplinas
+        List<ScheduledClass> dynamicClasses = new ArrayList<>();
+
+        // Clase 1: Yoga (en 1h03min)
+        if (templates.size() > 0) {
+            ClassTemplate yogaTemplate = templates.stream()
+                .filter(t -> "Yoga".equals(t.getDiscipline()))
+                .findFirst()
+                .orElse(templates.get(0));
+
+            ScheduledClass yogaClass = new ScheduledClass();
+            yogaClass.setTemplateId(yogaTemplate.getId());
+            yogaClass.setLocationId(yogaTemplate.getLocation() != null ? yogaTemplate.getLocation().getId() : locations.get(0).getId());
+            yogaClass.setDiscipline(yogaTemplate.getDiscipline());
+            yogaClass.setDateTime(startTime);
+            yogaClass.setCapacity(yogaTemplate.getCapacity());
+            yogaClass.setName(yogaTemplate.getName());
+            yogaClass.setProfessor(yogaTemplate.getProfessor());
+            yogaClass.setDurationMinutes(yogaTemplate.getDurationMinutes());
+            yogaClass.setLocation(yogaTemplate.getLocation() != null ? yogaTemplate.getLocation().getName() : locations.get(0).getName());
+            yogaClass.setEnrolledCount(0);
+            dynamicClasses.add(yogaClass);
+        }
+
+        // Clase 2: Spinning (en 1h03min, otra sede)
+        if (templates.size() > 1) {
+            ClassTemplate spinningTemplate = templates.stream()
+                .filter(t -> "Spinning".equals(t.getDiscipline()))
+                .findFirst()
+                .orElse(templates.get(1));
+
+            Location alternateLocation = locations.size() > 1 ? locations.get(1) : locations.get(0);
+
+            ScheduledClass spinningClass = new ScheduledClass();
+            spinningClass.setTemplateId(spinningTemplate.getId());
+            spinningClass.setLocationId(spinningTemplate.getLocation() != null ? spinningTemplate.getLocation().getId() : alternateLocation.getId());
+            spinningClass.setDiscipline(spinningTemplate.getDiscipline());
+            spinningClass.setDateTime(startTime);
+            spinningClass.setCapacity(spinningTemplate.getCapacity());
+            spinningClass.setName(spinningTemplate.getName());
+            spinningClass.setProfessor(spinningTemplate.getProfessor());
+            spinningClass.setDurationMinutes(spinningTemplate.getDurationMinutes());
+            spinningClass.setLocation(spinningTemplate.getLocation() != null ? spinningTemplate.getLocation().getName() : alternateLocation.getName());
+            spinningClass.setEnrolledCount(0);
+            dynamicClasses.add(spinningClass);
+        }
+
+        // Clase 3: Funcional (en 1h03min, tercera sede)
+        if (templates.size() > 2) {
+            ClassTemplate funcionalTemplate = templates.stream()
+                .filter(t -> "Funcional".equals(t.getDiscipline()))
+                .findFirst()
+                .orElse(templates.get(2));
+
+            Location thirdLocation = locations.size() > 2 ? locations.get(2) : locations.get(0);
+
+            ScheduledClass funcionalClass = new ScheduledClass();
+            funcionalClass.setTemplateId(funcionalTemplate.getId());
+            funcionalClass.setLocationId(funcionalTemplate.getLocation() != null ? funcionalTemplate.getLocation().getId() : thirdLocation.getId());
+            funcionalClass.setDiscipline(funcionalTemplate.getDiscipline());
+            funcionalClass.setDateTime(startTime);
+            funcionalClass.setCapacity(funcionalTemplate.getCapacity());
+            funcionalClass.setName(funcionalTemplate.getName());
+            funcionalClass.setProfessor(funcionalTemplate.getProfessor());
+            funcionalClass.setDurationMinutes(funcionalTemplate.getDurationMinutes());
+            funcionalClass.setLocation(funcionalTemplate.getLocation() != null ? funcionalTemplate.getLocation().getName() : thirdLocation.getName());
+            funcionalClass.setEnrolledCount(0);
+            dynamicClasses.add(funcionalClass);
+        }
+
+        // Guardar todas las clases dinámicas
+        scheduledClassRepository.saveAll(dynamicClasses);
+
+        log.info("Creadas {} clases dinámicas que comienzan a las {}", dynamicClasses.size(), startTime);
+        for (ScheduledClass sc : dynamicClasses) {
+            log.info("  - {} ({}) - {} a las {}", sc.getName(), sc.getDiscipline(), sc.getLocation(), sc.getDateTime());
+        }
     }
 }
