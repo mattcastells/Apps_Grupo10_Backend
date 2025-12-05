@@ -13,8 +13,8 @@ public class ScheduledClass {
     @Id
     private String id;
     private String templateId;
-    private String locationId;  // Denormalización para facilitar filtrado
-    private String discipline;  // Denormalización para facilitar filtrado
+    private String locationId;
+    private String discipline;
     private LocalDateTime dateTime;
     private Integer capacity;
     private String name;

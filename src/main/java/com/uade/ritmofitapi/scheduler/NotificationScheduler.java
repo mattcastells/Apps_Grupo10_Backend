@@ -35,7 +35,7 @@ public class NotificationScheduler {
      * Cron: segundo minuto hora día mes día-semana
      * 0 0/15 * * * * = cada 15 minutos
      */
-    @Scheduled(cron = "0 0/15 * * * *")
+    @Scheduled(cron = "0 0/1 * * * *")
     public synchronized void processPendingNotifications() {
         log.info("🔄 [SCHEDULER] Processing pending notifications...");
 
