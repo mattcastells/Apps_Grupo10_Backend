@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduledClassDto {
-    private String id;  // Changed back to 'id' for consistency
+    private String id; // Changed back to 'id' for consistency
+    private String name;
     private String professor;
     private String discipline;
     private String location;

@@ -31,7 +31,8 @@ public class ScheduleController {
 
     /**
      * Endpoint unificado con filtros opcionales
-     * GET /api/v1/schedule?location={id}&discipline={name}&from={dd-MM-yyyy}&to={dd-MM-yyyy}
+     * GET
+     * /api/v1/schedule?location={id}&discipline={name}&from={dd-MM-yyyy}&to={dd-MM-yyyy}
      * Todos los parámetros son opcionales
      */
     @GetMapping
@@ -39,8 +40,7 @@ public class ScheduleController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String discipline,
             @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to
-    ) {
+            @RequestParam(required = false) String to) {
         try {
             List<ScheduledClassDto> schedule = scheduleService.getFilteredSchedule(location, discipline, from, to);
             return ResponseEntity.ok(schedule);
@@ -56,13 +56,15 @@ public class ScheduleController {
     }
 
     @PostMapping
-    public ResponseEntity<ScheduledClassDto> createScheduledClass(@Valid @RequestBody CreateScheduledClassRequest request) {
+    public ResponseEntity<ScheduledClassDto> createScheduledClass(
+            @Valid @RequestBody CreateScheduledClassRequest request) {
         log.info("📥 Recibiendo solicitud de creación de clase: {}", request);
         ScheduledClass createdClass = scheduleService.createScheduledClass(request);
         log.info("✅ Clase creada exitosamente con ID: {}", createdClass.getId());
 
         ScheduledClassDto responseDto = new ScheduledClassDto(
                 createdClass.getId(),
+                createdClass.getName(),
                 createdClass.getProfessor(),
                 createdClass.getDiscipline(),
                 createdClass.getLocation(),
@@ -71,8 +73,7 @@ public class ScheduleController {
                 createdClass.getDurationMinutes(),
                 createdClass.getCapacity() - createdClass.getEnrolledCount(),
                 createdClass.getCapacity(),
-                createdClass.getDescription()
-        );
+                createdClass.getDescription());
 
         return ResponseEntity.created(URI.create("/api/v1/schedule/" + createdClass.getId()))
                 .body(responseDto);
@@ -93,6 +94,7 @@ public class ScheduleController {
 
         ScheduledClassDto responseDto = new ScheduledClassDto(
                 updatedClass.getId(),
+                updatedClass.getName(),
                 updatedClass.getProfessor(),
                 updatedClass.getDiscipline(),
                 updatedClass.getLocation(),
@@ -101,8 +103,7 @@ public class ScheduleController {
                 updatedClass.getDurationMinutes(),
                 updatedClass.getCapacity() - updatedClass.getEnrolledCount(),
                 updatedClass.getCapacity(),
-                updatedClass.getDescription()
-        );
+                updatedClass.getDescription());
 
         return ResponseEntity.ok(responseDto);
     }
